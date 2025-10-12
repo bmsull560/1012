@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import websocket
+from app.api.v1 import websocket, graph
+from app.database import engine, Base
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="ValueVerse API",
@@ -17,8 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include WebSocket router
+# Include routers
 app.include_router(websocket.router, prefix="/api/v1", tags=["websocket"])
+app.include_router(graph.router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
