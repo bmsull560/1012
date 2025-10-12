@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "projectContext": {
+    "name": "ValueVerse Platform",
+    "type": "full-stack-ai-saas",
+    "description": "Value Realization Operating System with AI agents",
+    "stack": {
+      "backend": ["FastAPI", "Python 3.11", "LangGraph", "PostgreSQL", "TimescaleDB"],
+      "frontend": ["Next.js 14", "React 18", "TypeScript", "Tailwind CSS", "shadcn/ui"],
+      "ai": ["LangChain", "CrewAI", "Claude-3", "GPT-4", "Gemini"],
+      "infrastructure": ["Docker", "GitHub Actions", "AWS/Railway"]
+    },
+    "keyComponents": [
+      "Living Value Graph (temporal knowledge structure)",
+      "Four AI Agents (ValueArchitect, ValueCommitter, ValueExecutor, ValueAmplifier)",
+      "Unified Workspace (conversational AI + interactive canvas)",
+      "Real-time WebSocket synchronization"
+    ]
+  },
+  "customPrompts": {
+    "feature": "Create a new feature for ValueVerse following the Living Value Graph architecture documented in docs/. Use FastAPI for backend (async, Pydantic validation, OAuth2), Next.js 14 for frontend (TypeScript, Tailwind, shadcn/ui). Ensure 80%+ test coverage, security best practices (input validation, auth), and comprehensive error handling. Follow the four-agent pattern if AI functionality is involved.",
+    "agent": "Implement a LangGraph AI agent following the ValueVerse agent pattern: transparent reasoning chains, tool use capabilities, handoff protocols to other agents, and integration with the Living Value Graph. Use LangChain/CrewAI, include comprehensive error handling, and maintain conversation context.",
+    "component": "Create a React component for the Unified Workspace using TypeScript, Tailwind CSS, and shadcn/ui. Ensure real-time sync capability via WebSocket, accessibility (WCAG 2.1 AA), responsive design, and proper error boundaries. Use Zustand for state and React Query for server state.",
+    "api": "Create a FastAPI endpoint with async handler, Pydantic request/response models with validators, OAuth2 authentication, comprehensive error handling with proper status codes, OpenAPI documentation, and unit tests achieving 80%+ coverage.",
+    "test": "Generate comprehensive tests using pytest (backend) or Jest+React Testing Library (frontend). Include unit tests, integration tests, edge cases, error scenarios, and mocked dependencies. Target 80%+ code coverage with clear, descriptive test names."
+  },
+  "contextFiles": [
+    "docs/design_brief.md",
+    "docs/operatingsystem.md",
+    "docs/value_drivers.md",
+    "docs/integrations.md",
+    "CONTRIBUTING.md",
+    "backend/README.md",
+    "frontend/README.md"
+  },
+  "rules": [
+    "ALWAYS include comprehensive type hints for Python and strict TypeScript (no 'any')",
+    "ALWAYS validate inputs using Pydantic (Python) or Zod (TypeScript)",
+    "ALWAYS include comprehensive error handling with proper logging",
+    "ALWAYS generate tests achieving 80%+ code coverage",
+    "ALWAYS follow ValueVerse security standards (OAuth2, input validation, no secrets in code)",
+    "ALWAYS use async/await for I/O operations",
+    "ALWAYS include OpenAPI/JSDoc documentation",
+    "NEVER hardcode secrets or credentials",
+    "NEVER use 'any' type in TypeScript",
+    "NEVER skip error handling or input validation"
+  ],
+  "securityGuidelines": {
+    "authentication": "OAuth2 + JWT with refresh tokens",
+    "inputValidation": "Pydantic for Python, Zod for TypeScript - validate ALL inputs",
+    "secrets": "Environment variables only, never in code",
+    "encryption": "TLS 1.3 in transit, AES-256-GCM at rest",
+    "authorization": "RBAC with principle of least privilege",
+    "rateLimit": "Implement on all public endpoints",
+    "cors": "Properly configured CORS with whitelist",
+    "headers": "Security headers (CSP, HSTS, X-Frame-Options)"
+  },
+  "qualityStandards": {
+    "testCoverage": "80% minimum, 100% for critical paths",
+    "documentation": "Docstrings/JSDoc for all public functions",
+    "errorHandling": "Comprehensive with proper status codes and logging",
+    "performance": "Agent response <500ms, canvas updates <100ms",
+    "accessibility": "WCAG 2.1 AA compliance",
+    "codeReview": "All AI-generated code requires human review"
+  },
+  "workflows": {
+    "issueToImplementation": {
+      "trigger": "Label issue with 'auto-develop' or comment '/develop'",
+      "process": [
+        "AI analyzes issue against ValueVerse architecture",
+        "Generates backend FastAPI code with tests",
+        "Generates frontend React components with tests",
+        "Creates documentation and updates",
+        "Opens PR with comprehensive description"
+      ],
+      "review": "Human review required before merge"
+    }
+  }
+}

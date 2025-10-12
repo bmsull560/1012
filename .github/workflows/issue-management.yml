@@ -1,0 +1,29 @@
+name: Issue Management
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  label_issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add labels based on issue content
+        uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+
+  assign_project:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Assign to project board
+        uses: actions/add-to-project@v1
+        with:
+          project-url: "https://github.com/orgs/your-org/projects/1"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+

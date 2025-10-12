@@ -1,0 +1,20 @@
+# AI Development Automation Dependencies
+# Install with: pip install -r requirements-ai.txt
+
+# AI Model APIs
+anthropic>=0.18.0
+openai>=1.12.0
+google-generativeai>=0.3.0
+
+# GitHub Integration
+PyGithub>=2.1.1
+gitpython>=3.1.41
+
+# Token Management
+tiktoken>=0.5.2
+
+# Data Processing
+pydantic>=2.5.0
+
+# HTTP Requests
+httpx>=0.26.0

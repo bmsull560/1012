@@ -1,0 +1,25 @@
+bug:
+  - '\bbug\b'
+  - '\berror\b'
+  - '\bfix\b'
+
+feature:
+  - '\bfeature\b'
+  - '\brequest\b'
+  - '\badd\b'
+
+documentation:
+  - '\bdocs\b'
+  - '\bdocumentation\b'
+  - '\bguide\b'
+
+backend:
+  - '\bbackend\b'
+  - '\bapi\b'
+  - '\bdatabase\b'
+
+frontend:
+  - '\bfrontend\b'
+  - '\bui\b'
+  - '\breact\b'
+
