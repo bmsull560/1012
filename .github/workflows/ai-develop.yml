@@ -32,21 +32,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
       
       - name: Install dependencies
         run: |
-          pip install anthropic openai google-generativeai tiktoken gitpython pygithub
+          pip install httpx pygithub anthropic openai
       
       - name: Generate implementation
         env:
+          AI_PROVIDER: ${{ secrets.AI_PROVIDER || 'together' }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python scripts/ai_developer.py
+        run: python scripts/ai_developer_multi_provider.py
       
       - name: Create Pull Request
         env:
