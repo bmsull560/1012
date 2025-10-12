@@ -194,25 +194,28 @@ npm test             # Run tests
 
 ValueVerse features an **automated development system** that uses AI to generate code from GitHub issues!
 
-### Quick Start
+### Quick Start (5 Minutes)
 
 ```bash
-# 1. Setup (one time)
-bash scripts/setup_ai_automation.sh
+# 1. Get OpenRouter API key (free signup)
+# Visit: https://openrouter.ai → Sign Up → Create Key
 
-# 2. Create an issue describing a feature
+# 2. Add to GitHub secrets
+gh secret set OPENROUTER_API_KEY
+
+# 3. Create an issue and label it
 gh issue create --title "Add User API" --body "Create user CRUD endpoints" --label auto-develop
 
-# 3. AI automatically generates code and creates a PR!
+# 4. AI automatically generates code and creates a PR!
 ```
 
 **How it works:**
 - Label issue with `auto-develop` or comment `/develop`
-- AI analyzes requirements using Claude-3-Opus
+- AI analyzes requirements and generates implementation
 - Generates backend (FastAPI) + frontend (React) + tests
-- Creates PR for human review
+- Creates PR ready for human review
 
-**See:** `AI_AUTOMATION_SETUP.md` for complete guide
+**See:** `QUICK_START_OPENROUTER.md` for detailed setup
 
 ### What AI Generates
 
@@ -222,7 +225,18 @@ gh issue create --title "Add User API" --body "Create user CRUD endpoints" --lab
 - ✅ API documentation
 - ✅ Type-safe code (Pydantic, TypeScript strict)
 
-**Cost:** ~$0.37 per feature (Claude + GPT-4 + Gemini)
+### AI Provider Options
+
+| Provider | Cost/Feature | Quality | Setup |
+|----------|--------------|---------|-------|
+| **OpenRouter** ⭐ | $0.05 | Excellent | 5 min |
+| Together.ai | $0.02 | Great | 5 min |
+| Windsurf AI | Varies | Excellent | IDE |
+| Anthropic Direct | $0.37 | Best | 5 min |
+
+**Recommended:** OpenRouter (best value, access to 100+ models)
+
+**Full guide:** `AI_PROVIDERS_GUIDE.md`
 
 ## Contributing
 
