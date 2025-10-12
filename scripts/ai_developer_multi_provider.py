@@ -94,20 +94,27 @@ class MultiProviderAI:
         url = "https://api.together.xyz/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
         }
         
         data = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
-            "temperature": 0.2
+            "temperature": 0.2,
+            "stop": ["```\n\n", "###"]
         }
         
-        response = httpx.post(url, json=data, headers=headers, timeout=120.0)
-        response.raise_for_status()
-        
-        result = response.json()
-        return result['choices'][0]['message']['content']
+        try:
+            response = httpx.post(url, json=data, headers=headers, timeout=120.0)
+            response.raise_for_status()
+            
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        except httpx.HTTPStatusError as e:
+            print(f"⚠️  Together.ai API error: {e}")
+            print(f"Response body: {e.response.text[:500]}")
+            raise
     
     def _call_windsurf(self, prompt: str, model: str = None, max_tokens: int = 4096) -> str:
         """
