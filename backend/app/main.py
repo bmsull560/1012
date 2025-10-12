@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1 import websocket
 
 app = FastAPI(
     title="ValueVerse API",
@@ -15,6 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include WebSocket router
+app.include_router(websocket.router, prefix="/api/v1", tags=["websocket"])
 
 @app.get("/")
 def read_root():
