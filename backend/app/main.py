@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import websocket, graph, agents
+from app.api.v1 import websocket, graph, agents, integrations
 from app.database import engine, Base
 
 # Create database tables
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(websocket.router, prefix="/api/v1", tags=["websocket"])
 app.include_router(graph.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1")
+app.include_router(integrations.router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
