@@ -258,13 +258,33 @@ Return only valid JSON."""
 
         response = self.ai.generate(prompt, task_type='analysis', max_tokens=4096)
         
-        # Extract JSON
+        # Extract JSON with improved parsing
         json_start = response.find('{')
-        json_end = response.rfind('}') + 1
-        if json_start != -1 and json_end > json_start:
-            return json.loads(response[json_start:json_end])
+        if json_start == -1:
+            print("⚠️  No JSON found in response, using defaults")
+            return {'component_type': 'fullstack', 'complexity': 'high', 'files_to_create': []}
         
-        return {'component_type': 'fullstack', 'complexity': 'medium', 'files_to_create': []}
+        # Find matching closing brace
+        brace_count = 0
+        json_end = json_start
+        for i in range(json_start, len(response)):
+            if response[i] == '{':
+                brace_count += 1
+            elif response[i] == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    json_end = i + 1
+                    break
+        
+        try:
+            json_str = response[json_start:json_end]
+            result = json.loads(json_str)
+            print(f"✅ Parsed analysis: {result.get('component_type')}, {result.get('complexity')}")
+            return result
+        except json.JSONDecodeError as e:
+            print(f"⚠️  JSON parse error: {e}")
+            print(f"Attempted to parse: {json_str[:200]}...")
+            return {'component_type': 'fullstack', 'complexity': 'high', 'files_to_create': []}
     
     def generate_backend_code(self, analysis: Dict, context: str, file_spec: Dict) -> str:
         """Generate backend code."""
