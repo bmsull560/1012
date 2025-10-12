@@ -16,11 +16,11 @@ class ValueArchitect:
     '''Agent for discovering pain points and generating value hypotheses'''
     
     def __init__(self, llm_provider: str = "together", model: str = "meta-llama/Llama-3.1-70B-Instruct-Turbo"):
-        api_key = os.getenv("TOGETHER_API_KEY", "")
+        api_key = os.getenv("TOGETHER_API_KEY", "dummy-key-for-development")
         
         self.llm = ChatOpenAI(
             base_url="https://api.together.xyz/v1",
-            api_key=api_key,
+            openai_api_key=api_key,
             model=model,
             temperature=0.7
         )
