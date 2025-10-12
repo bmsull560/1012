@@ -1,0 +1,12 @@
+{
+  "component_type": "backend",
+  "complexity": "low",
+  "files_to_create": [
+    {
+      "path": ".env.example",
+      "purpose": "Example environment variables file"
+    }
+  ],
+  "security_considerations": "Note: The SECRET_KEY variable should be kept secret and not committed to version control. It's recommended to use a secure random key generator to generate a strong secret key.",
+  "testing_requirements": "None, as this is a configuration file and does not require testing."
+}
