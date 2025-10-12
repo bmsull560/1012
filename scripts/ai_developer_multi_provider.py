@@ -41,7 +41,7 @@ class MultiProviderAI:
         """Get API key based on provider."""
         key_map = {
             'openrouter': 'OPENROUTER_API_KEY',
-            'together': 'tgp_v1_PEw2UuaAkOKLkv2Nnobm6V5GFRnvZeQ_AULZmLMZFZQ',
+            'together': 'TOGETHER_API_KEY',
             'windsurf': 'WINDSURF_API_KEY',
             'anthropic': 'ANTHROPIC_API_KEY',
             'openai': 'OPENAI_API_KEY',
