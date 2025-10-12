@@ -1,0 +1,66 @@
+// frontend/tsconfig.json
+
+{
+  "compilerOptions": {
+    // Target ES6 syntax
+    "target": "es6",
+    // Enable strict type checking
+    "strict": true,
+    // Enable module resolution
+    "moduleResolution": "node",
+    // Enable source maps
+    "sourceMap": true,
+    // Enable inline source maps
+    "inlineSources": true,
+    // Enable noEmitOnError
+    "noEmitOnError": true,
+    // Enable noImplicitAny
+    "noImplicitAny": true,
+    // Enable noImplicitThis
+    "noImplicitThis": true,
+    // Enable strictNullChecks
+    "strictNullChecks": true,
+    // Enable strictFunctionTypes
+    "strictFunctionTypes": true,
+    // Enable strictBindCallApply
+    "strictBindCallApply": true,
+    // Enable strictPropertyInitialization
+    "strictPropertyInitialization": true,
+    // Enable noImplicitReturns
+    "noImplicitReturns": true,
+    // Enable noUnusedLocals
+    "noUnusedLocals": true,
+    // Enable noUnusedParameters
+    "noUnusedParameters": true,
+    // Enable noImplicitUseStrict
+    "noImplicitUseStrict": true,
+    // Enable module
+    "module": "commonjs",
+    // Enable esModuleInterop
+    "esModuleInterop": true,
+    // Enable allowSyntheticDefaultImports
+    "allowSyntheticDefaultImports": true,
+    // Enable resolveJsonModule
+    "resolveJsonModule": true,
+    // Enable isolatedModules
+    "isolatedModules": true,
+    // Enable allowUmdGlobalAccess
+    "allowUmdGlobalAccess": true,
+    // Enable outDir
+    "outDir": "build",
+    // Enable rootDir
+    "rootDir": ".",
+    // Enable baseUrl
+    "baseUrl": ".",
+    // Enable paths
+    "paths": {
+      "@components/*": ["src/components/*"],
+      "@lib/*": ["src/lib/*"],
+      "@stores/*": ["src/stores/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@types/*": ["src/types/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules/**"]
+}
