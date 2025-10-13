@@ -79,7 +79,7 @@ Generate a JSON specification with this exact structure:
       "action": "What happens",
       "side_effects": "State changes, API calls, etc."
     }}
-  ]},
+  ],
   "api_integrations": [
     {{
       "endpoint": "/api/v1/...",
@@ -224,7 +224,7 @@ Generate a JSON plan with this structure:
     }},
     {{
       "type": "websocket",
-      "channel": "workspace_{id}",
+      "channel": "workspace_{{id}}",
       "hook": "useWebSocket",
       "reconnect": "auto with exponential backoff"
     }}
@@ -356,8 +356,8 @@ Generate complete, production-ready TypeScript React components following the ar
 ```typescript
 'use client'
 
-import {{ useState, useEffect, useCallback }} from 'react'
-import {{ motion }} from 'framer-motion'
+import {{{{ useState, useEffect, useCallback }}}} from 'react'
+import {{{{ motion }}}} from 'framer-motion'
 // ... other imports
 
 /**
@@ -369,60 +369,60 @@ import {{ motion }} from 'framer-motion'
  * ```
  */
 
-interface ComponentNameProps {{
+interface ComponentNameProps {{{{
   // Props with JSDoc comments
   prop1: string
   prop2?: number
   onAction?: (data: ActionData) => void
-}}
+}}}}
 
-export function ComponentName({{ 
+export function ComponentName({{{ 
   prop1, 
   prop2 = defaultValue,
   onAction
-}}: ComponentNameProps) {{
+}}}: ComponentNameProps) {{{{
   // State
   const [state, setState] = useState<StateType>(initialState)
   
   // Hooks
-  const {{ data, isLoading, error }} = useQuery(...)
+  const {{{{ data, isLoading, error }}}} = useQuery(...)
   const websocket = useWebSocket(...)
   
   // Callbacks
-  const handleAction = useCallback(() => {{
+  const handleAction = useCallback(() => {{{{
     // Handler logic with error handling
-    try {{
+    try {{{{
       // Do something
       onAction?.(data)
-    }} catch (error) {{
+    }}}} catch (error) {{{{
       console.error('Action failed:', error)
       // Show error toast
-    }}
-  }}, [dependencies])
+    }}}}
+  }}}}, [dependencies])
   
   // Effects
-  useEffect(() => {{
+  useEffect(() => {{{{
     // Side effects
-  }}, [dependencies])
+  }}}}, [dependencies])
   
   // Loading state
   if (isLoading) return <LoadingSpinner />
   
   // Error state
-  if (error) return <ErrorMessage error={{error}} />
+  if (error) return <ErrorMessage error={{{{error}}}} />
   
   // Main render
   return (
     <motion.div
       className="..."
-      initial={{{{ opacity: 0 }}}}
-      animate={{{{ opacity: 1 }}}}
+      initial={{{{{{ opacity: 0 }}}}}}
+      animate={{{{{{ opacity: 1 }}}}}}
       aria-label="Component description"
     >
-      {{/* Component JSX */}}
+      {{{{/* Component JSX */}}}}
     </motion.div>
   )
-}}
+}}}}
 ```
 
 # SPECIFIC REQUIREMENTS
@@ -477,45 +477,45 @@ Enhance the components with:
 ## React Query Pattern
 
 ```typescript
-import {{ useQuery, useMutation, useQueryClient }} from '@tanstack/react-query'
+import {{{{ useQuery, useMutation, useQueryClient }}}} from '@tanstack/react-query'
 
 // Fetch data
-const {{ data, isLoading, error }} = useQuery({{
+const {{{{ data, isLoading, error }}}} = useQuery({{{{
   queryKey: ['resource', id],
-  queryFn: () => fetch(`/api/v1/resource/${{id}}`).then(r => r.json()),
+  queryFn: () => fetch(`/api/v1/resource/${{{{id}}}}`).then(r => r.json()),
   staleTime: 1000 * 60 * 5, // 5 minutes
   refetchOnWindowFocus: true
-}})
+}}}})
 
 // Mutate data
-const mutation = useMutation({{
+const mutation = useMutation({{{{
   mutationFn: (newData) => 
-    fetch('/api/v1/resource', {{
+    fetch('/api/v1/resource', {{{{
       method: 'POST',
       body: JSON.stringify(newData)
-    }}),
-  onSuccess: () => {{
+    }}}}),
+  onSuccess: () => {{{{
     queryClient.invalidateQueries(['resource'])
-  }}
-}})
+  }}}}
+}}}})
 ```
 
 ## WebSocket Pattern
 
 ```typescript
-import {{ useWebSocket }} from '@/hooks/useWebSocket'
+import {{{{ useWebSocket }}}} from '@/hooks/useWebSocket'
 
-const {{ lastMessage, sendMessage, connectionStatus }} = useWebSocket(
-  `ws://localhost:8000/api/v1/ws/${{workspaceId}}`
+const {{{{ lastMessage, sendMessage, connectionStatus }}}} = useWebSocket(
+  `ws://localhost:8000/api/v1/ws/${{{{workspaceId}}}}`
 )
 
-useEffect(() => {{
-  if (lastMessage) {{
+useEffect(() => {{{{
+  if (lastMessage) {{{{
     // Handle incoming message
     const data = JSON.parse(lastMessage.data)
     // Update state or invalidate queries
-  }}
-}}, [lastMessage])
+  }}}}
+}}}}, [lastMessage])
 ```
 
 # REQUIREMENTS
@@ -587,55 +587,55 @@ Your task is to review generated component code and ensure it meets production s
 Generate a JSON quality report:
 
 ```json
-{{
+{{{{
   "overall_score": 8.5,
   "passed_checks": 15,
   "failed_checks": 2,
   "warnings": 3,
-  "checks": {{
-    "typescript": {{
+  "checks": {{{{
+    "typescript": {{{{
       "status": "pass|fail|warning",
       "score": 9,
       "issues": ["List of issues"],
       "suggestions": ["List of improvements"]
-    }},
-    "react": {{
+    }}}},
+    "react": {{{{
       "status": "pass",
       "score": 10,
       "issues": [],
       "suggestions": []
-    }},
-    "accessibility": {{
+    }}}},
+    "accessibility": {{{{
       "status": "pass",
       "score": 9,
       "issues": [],
       "suggestions": ["Add aria-describedby"]
-    }},
-    "security": {{
+    }}}},
+    "security": {{{{
       "status": "pass",
       "score": 10,
       "issues": [],
       "suggestions": []
-    }},
-    "performance": {{
+    }}}},
+    "performance": {{{{
       "status": "warning",
       "score": 7,
       "issues": [],
       "suggestions": ["Consider React.memo for heavy component"]
-    }},
-    "code_style": {{
+    }}}},
+    "code_style": {{{{
       "status": "pass",
       "score": 9,
       "issues": [],
       "suggestions": []
-    }},
-    "error_handling": {{
+    }}}},
+    "error_handling": {{{{
       "status": "pass",
       "score": 8,
       "issues": [],
       "suggestions": ["Add error boundary"]
-    }}
-  }},
+    }}}}
+  }}}},
   "critical_issues": [],
   "recommendations": [
     "Add loading skeleton for better UX",
@@ -644,7 +644,7 @@ Generate a JSON quality report:
   ],
   "confidence": 0.9,
   "ready_for_production": true
-}}
+}}}}
 ```
 
 # DECISION CRITERIA

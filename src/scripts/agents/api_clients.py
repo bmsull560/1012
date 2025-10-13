@@ -178,6 +178,9 @@ class TogetherClient:
 
         raise RuntimeError("Exhausted retries for stream_generate request.")
 
+    async def close(self):
+        """Gracefully closes the HTTP client."""
+        await self._client.aclose()
 
 def get_together_client() -> "TogetherClient":
     """Factory function to get an instance of the TogetherClient."""

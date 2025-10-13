@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: src/backend/Dockerfile
     container_name: valueverse-backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./src/backend:/app
     ports:

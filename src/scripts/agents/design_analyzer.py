@@ -75,86 +75,72 @@ def extract_json_from_response(response: str) -> Dict:
 async def analyze_design(client, component_name: str, design_docs: str) -> Dict:
     """
     Analyze design documentation and generate component specification.
-    
-    Args:
-        component_name: Name of component to generate spec for
-        design_docs: Combined design documentation content
-    
-    Returns:
-        Component specification as dictionary
     """
     print(f"\n🔍 Agent 1: Analyzing design for {component_name}...")
     
+    prompt = get_prompt(
+        'design_analyzer',
+        component_name=component_name,
+        design_docs=design_docs
+    )
+    
+    print("🤖 Calling Together AI for design analysis...")
+    response = await client.generate(
+        prompt=prompt,
+        model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+        max_tokens=4096,
+        temperature=0.3
+    )
     
     try:
-        # Get prompt template
-        prompt = get_prompt(
-            'design_analyzer',
-            component_name=component_name,
-            design_docs=design_docs
-        )
+        spec = extract_json_from_response(response)
+        print("✅ Extracted component specification")
+    except ValueError as e:
+        print(f"⚠️  Warning: {e}")
+        print("📝 Raw response:")
+        print(response[:500] + "..." if len(response) > 500 else response)
         
-        # Call AI with long context window
-        print("🤖 Calling Together AI for design analysis...")
-        response = await client.generate(
-            prompt=prompt,
-            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-            max_tokens=4096,
-            temperature=0.3  # Lower temperature for more consistent structured output
-        )
-        
-        # Extract JSON from response
-        try:
-            spec = extract_json_from_response(response)
-            print("✅ Extracted component specification")
-        except ValueError as e:
-            print(f"⚠️  Warning: {e}")
-            print("📝 Raw response:")
-            print(response[:500] + "..." if len(response) > 500 else response)
-            
-            # Create a basic spec as fallback
-            spec = {
-                "component": {
-                    "name": component_name,
-                    "type": "interface",
-                    "priority": "medium",
-                    "description": f"Generated specification for {component_name}"
-                },
-                "design_principles": ["dual-brain", "progressive-disclosure"],
-                "user_stories": [],
-                "technical_requirements": {
-                    "framework": "Next.js 14",
-                    "component_type": "'use client'",
-                    "state_management": "local",
-                    "styling": "tailwind",
-                    "real_time": "none",
-                    "accessibility": "WCAG 2.1 AA"
-                },
-                "props": {},
-                "state": {},
-                "behaviors": [],
-                "api_integrations": [],
-                "styling_requirements": {},
-                "progressive_disclosure": {},
-                "real_time_features": [],
-                "accessibility_requirements": [],
-                "dependencies": []
-            }
-            print("⚠️  Using fallback specification")
-        
-        # Validate required fields
-        required_fields = ['component', 'design_principles', 'technical_requirements']
-        for field in required_fields:
-            if field not in spec:
-                print(f"⚠️  Warning: Missing required field '{field}' in specification")
-        
-        return spec
+        spec = {
+            "component": {
+                "name": component_name,
+                "type": "interface",
+                "priority": "medium",
+                "description": f"Generated specification for {component_name}"
+            },
+            "design_principles": ["dual-brain", "progressive-disclosure"],
+            "user_stories": [],
+            "technical_requirements": {
+                "framework": "Next.js 14",
+                "component_type": "'use client'",
+                "state_management": "local",
+                "styling": "tailwind",
+                "real_time": "none",
+                "accessibility": "WCAG 2.1 AA"
+            },
+            "props": {},
+            "state": {},
+            "behaviors": [],
+            "api_integrations": [],
+            "styling_requirements": {},
+            "progressive_disclosure": {},
+            "real_time_features": [],
+            "accessibility_requirements": [],
+            "dependencies": []
+        }
+        print("⚠️  Using fallback specification")
+    
+    required_fields = ['component', 'design_principles', 'technical_requirements']
+    for field in required_fields:
+        if field not in spec:
+            print(f"⚠️  Warning: Missing required field '{field}' in specification")
+    
+    return spec
 
 
 async def main():
     """Main execution."""
+    client = None
     try:
-        # Get component name from request or environment
         request_file = 'output/request.json'
         
         if os.path.exists(request_file):
@@ -162,7 +148,7 @@ async def main():
                 request = json.load(f)
                 component_name = request.get('component_name')
         else:
-            component_name = os.getenv('COMPONENT_NAME')
+            component_name = os.getenv('COMPONENT_NAME', 'Button') # Default to Button for local runs
         
         if not component_name:
             print("❌ Error: No component name provided")
@@ -170,17 +156,11 @@ async def main():
         
         print(f"🎯 Target component: {component_name}")
         
-        # Read design documentation
         design_docs = read_design_docs()
         
-        # Analyze design
-    client = get_together_client()
-    try:
+        client = get_together_client()
         spec = await analyze_design(client, component_name, design_docs)
-    finally:
-        await client.close()
-        
-        # Save specification
+
         output_dir = 'output'
         os.makedirs(output_dir, exist_ok=True)
         
@@ -190,7 +170,6 @@ async def main():
         
         print(f"💾 Saved specification to {spec_file}")
         
-        # Print summary
         print("\n📊 Design Analysis Summary:")
         print(f"   Component: {spec['component']['name']}")
         print(f"   Type: {spec['component']['type']}")
@@ -204,6 +183,9 @@ async def main():
         import traceback
         traceback.print_exc()
         sys.exit(1)
+    finally:
+        if client:
+            await client.close()
 
 
 if __name__ == "__main__":
