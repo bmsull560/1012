@@ -1,0 +1,130 @@
+{
+  "datacenter": "dc1",
+  "data_dir": "/consul/data",
+  "log_level": "INFO",
+  "node_name": "valueverse-consul",
+  "server": true,
+  "bootstrap_expect": 1,
+  "ui": true,
+  "client_addr": "0.0.0.0",
+  "bind_addr": "0.0.0.0",
+  "advertise_addr": "consul",
+  "ports": {
+    "grpc": 8502
+  },
+  "connect": {
+    "enabled": true
+  },
+  "services": [
+    {
+      "id": "value-architect-1",
+      "name": "value-architect",
+      "tags": ["primary", "v1"],
+      "address": "value-architect",
+      "port": 8001,
+      "meta": {
+        "version": "1.0.0",
+        "protocol": "http"
+      },
+      "check": {
+        "http": "http://value-architect:8001/health",
+        "interval": "10s",
+        "timeout": "5s"
+      },
+      "weights": {
+        "passing": 10,
+        "warning": 1
+      }
+    },
+    {
+      "id": "value-committer-1",
+      "name": "value-committer",
+      "tags": ["primary", "v1"],
+      "address": "value-committer",
+      "port": 8002,
+      "check": {
+        "http": "http://value-committer:8002/health",
+        "interval": "10s"
+      }
+    },
+    {
+      "id": "value-executor-1",
+      "name": "value-executor",
+      "tags": ["primary", "v1"],
+      "address": "value-executor",
+      "port": 8003,
+      "check": {
+        "http": "http://value-executor:8003/health",
+        "interval": "10s"
+      }
+    },
+    {
+      "id": "value-amplifier-1",
+      "name": "value-amplifier",
+      "tags": ["primary", "v1"],
+      "address": "value-amplifier",
+      "port": 8004,
+      "check": {
+        "http": "http://value-amplifier:8004/health",
+        "interval": "10s"
+      }
+    },
+    {
+      "id": "calculation-engine-1",
+      "name": "calculation-engine",
+      "tags": ["compute", "v1"],
+      "address": "calculation-engine",
+      "port": 8005,
+      "check": {
+        "http": "http://calculation-engine:8005/health",
+        "interval": "10s"
+      }
+    },
+    {
+      "id": "notification-service-1",
+      "name": "notification-service",
+      "tags": ["async", "v1"],
+      "address": "notification-service",
+      "port": 8006,
+      "check": {
+        "http": "http://notification-service:8006/health",
+        "interval": "10s"
+      }
+    },
+    {
+      "id": "postgres-primary",
+      "name": "postgres",
+      "tags": ["primary", "database"],
+      "address": "postgres",
+      "port": 5432,
+      "check": {
+        "tcp": "postgres:5432",
+        "interval": "10s"
+      }
+    },
+    {
+      "id": "redis-primary",
+      "name": "redis",
+      "tags": ["cache", "primary"],
+      "address": "redis",
+      "port": 6379,
+      "check": {
+        "tcp": "redis:6379",
+        "interval": "10s"
+      }
+    }
+  ],
+  "acl": {
+    "enabled": false,
+    "default_policy": "allow"
+  },
+  "performance": {
+    "raft_multiplier": 1
+  },
+  "telemetry": {
+    "prometheus_retention_time": "60s",
+    "disable_hostname": false,
+    "metrics_prefix": "consul",
+    "filter_default": true
+  }
+}

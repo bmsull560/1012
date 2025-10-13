@@ -1,0 +1,23 @@
+# Testing dependencies for ValueVerse microservices
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-xdist==3.3.1  # Parallel test execution
+
+# Testcontainers
+testcontainers[postgres]==3.7.1
+testcontainers[redis]==3.7.1
+testcontainers[kafka]==3.7.1
+testcontainers[rabbitmq]==3.7.1
+
+# Additional testing tools
+httpx==0.25.1  # Async HTTP client for testing
+faker==20.0.3  # Generate test data
+freezegun==1.2.2  # Time mocking
+pytest-benchmark==4.0.0  # Performance testing
+pytest-timeout==2.2.0  # Timeout flaky tests
+
+# Code quality
+black==23.11.0
+ruff==0.1.6
+mypy==1.7.0

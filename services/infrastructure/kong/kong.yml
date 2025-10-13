@@ -1,0 +1,211 @@
+_format_version: "3.0"
+_transform: true
+
+# Kong Declarative Configuration for ValueVerse API Gateway
+
+services:
+  # Value Architect Service
+  - name: value-architect
+    url: http://value-architect:8001
+    retries: 5
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
+    routes:
+      - name: value-architect-routes
+        paths:
+          - /api/v1/value-models
+          - /api/v1/architect
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 10000
+          policy: local
+      - name: cors
+        config:
+          origins:
+            - "*"
+          credentials: true
+          max_age: 3600
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+          exposed_headers:
+            - X-Auth-Token
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - X-Service:value-architect
+
+  # Value Committer Service
+  - name: value-committer
+    url: http://value-committer:8002
+    retries: 5
+    routes:
+      - name: value-committer-routes
+        paths:
+          - /api/v1/commitments
+          - /api/v1/committer
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 10000
+      - name: cors
+        config:
+          origins:
+            - "*"
+          credentials: true
+
+  # Value Executor Service
+  - name: value-executor
+    url: http://value-executor:8003
+    retries: 3
+    routes:
+      - name: value-executor-routes
+        paths:
+          - /api/v1/executions
+          - /api/v1/executor
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+
+  # Value Amplifier Service
+  - name: value-amplifier
+    url: http://value-amplifier:8004
+    retries: 3
+    routes:
+      - name: value-amplifier-routes
+        paths:
+          - /api/v1/amplifications
+          - /api/v1/amplifier
+        strip_path: false
+
+  # Calculation Engine
+  - name: calculation-engine
+    url: http://calculation-engine:8005
+    retries: 5
+    routes:
+      - name: calculation-routes
+        paths:
+          - /api/v1/calculate
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 200  # Higher rate for calculation-intensive service
+      - name: response-transformer
+        config:
+          add:
+            headers:
+              - X-Calculated-By:calculation-engine
+
+  # Notification Service
+  - name: notification-service
+    url: http://notification-service:8006
+    routes:
+      - name: notification-routes
+        paths:
+          - /api/v1/notifications
+        strip_path: false
+
+# Global Plugins
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: false
+  
+  - name: request-id
+    config:
+      header_name: X-Request-Id
+      echo_downstream: true
+  
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-Id
+      generator: uuid
+      echo_downstream: true
+  
+  - name: zipkin
+    config:
+      http_endpoint: http://jaeger:9411/api/v2/spans
+      sample_ratio: 1
+      include_credential: true
+  
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 8  # megabytes
+  
+  - name: bot-detection
+  
+  - name: http-log
+    config:
+      http_endpoint: http://loki:3100/loki/api/v1/push
+
+# Upstreams for load balancing
+upstreams:
+  - name: value-architect-upstream
+    algorithm: round-robin
+    targets:
+      - target: value-architect-1:8001
+        weight: 100
+      - target: value-architect-2:8001
+        weight: 100
+    healthchecks:
+      active:
+        healthy:
+          interval: 5
+          successes: 1
+        unhealthy:
+          interval: 5
+          tcp_failures: 3
+          timeouts: 3
+          http_failures: 3
+      passive:
+        healthy:
+          successes: 1
+        unhealthy:
+          tcp_failures: 3
+          timeouts: 3
+          http_failures: 3
+
+# Authentication consumers (to be added)
+consumers:
+  - username: admin
+    custom_id: admin-001
+    tags:
+      - admin
+    credentials:
+      - key: admin-api-key-123
+    acls:
+      - group: admin
+
+  - username: frontend
+    custom_id: frontend-001
+    credentials:
+      - key: frontend-api-key-456
+    acls:
+      - group: frontend

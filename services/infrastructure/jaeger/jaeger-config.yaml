@@ -1,0 +1,104 @@
+# Jaeger Configuration for ValueVerse Distributed Tracing
+
+# Collector configuration
+collector:
+  zipkin:
+    host-port: :9411
+  
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  jaeger:
+    thrift-http:
+      host-port: :14268
+    thrift-compact:
+      host-port: :6831
+    thrift-binary:
+      host-port: :6832
+    grpc:
+      host-port: :14250
+
+# Sampling configuration
+sampling:
+  default_strategy:
+    type: probabilistic
+    param: 1.0  # Sample 100% for development, reduce for production
+  
+  service_strategies:
+    - service: "value-architect"
+      type: probabilistic
+      param: 1.0
+    - service: "value-committer"
+      type: probabilistic
+      param: 1.0
+    - service: "value-executor"
+      type: probabilistic
+      param: 0.5
+    - service: "value-amplifier"
+      type: probabilistic
+      param: 0.5
+    - service: "calculation-engine"
+      type: adaptive
+      max_traces_per_second: 100
+
+# Storage configuration (using in-memory for now)
+storage:
+  type: memory
+  memory:
+    max-traces: 100000
+
+# Query service configuration
+query:
+  host-port: :16686
+  base-path: /
+  ui-config: /etc/jaeger/ui-config.json
+  
+# Agent configuration
+agent:
+  host-port: :5775
+  compact-port: :6831
+  binary-port: :6832
+  sampling-port: :5778
+
+# Processor configuration
+processor:
+  jaeger-compact:
+    server-host-port: :6831
+    server-max-packet-size: 65536
+    workers: 10
+  
+  jaeger-binary:
+    server-host-port: :6832
+    server-max-packet-size: 65536
+    workers: 10
+  
+  zipkin:
+    server-host-port: :9411
+  
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+# Service dependencies
+dependencies:
+  data-frequency: 30s
+  storage:
+    enabled: true
+
+# Metrics configuration
+metrics:
+  backend: prometheus
+  prometheus:
+    host-port: :14269
+  
+# Health check
+health-check:
+  enabled: true
+  port: 13133

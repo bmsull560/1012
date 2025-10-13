@@ -1,10 +1,39 @@
-# ValueVerse Platform
+# 🚀 ValueVerse Platform
 
-> The Value Realization Operating System - Transforming B2B relationships into perpetual value creation engines
+> **Enterprise-Grade Value Intelligence Platform**  
+> AI-powered value modeling, ROI analysis, and stakeholder engagement for SaaS companiesonships into perpetual value creation engines
 
-## Overview
+## 🏗️ Repository Structure
 
-ValueVerse is an enterprise-grade platform that revolutionizes how businesses create, deliver, and prove customer value. By combining Living Value Graphs with Agentic Orchestration and an Adaptive Interface, ValueVerse transforms customer relationships from transactional to transformational.
+```
+valueverse/
+├── backend/               # Production FastAPI backend
+│   ├── app/              # Application modules
+│   ├── tests/            # Backend tests
+│   ├── requirements.txt  # Python dependencies
+│   └── Dockerfile        # Backend container
+│
+├── frontend/              # Next.js 14 frontend
+│   ├── app/              # App directory (pages)
+│   ├── components/       # React components
+│   ├── services/         # API services
+│   └── package.json      # Node dependencies
+│
+├── infrastructure/        # Deployment configurations
+│   ├── docker/           # Docker Compose files
+│   ├── kubernetes/       # K8s manifests
+│   └── config/           # Nginx, Prometheus configs
+│
+├── scripts/              # Utility scripts
+│   ├── setup/           # Setup scripts
+│   ├── deploy/          # Deployment scripts
+│   └── maintenance/     # Maintenance scripts
+│
+└── docs/                # Documentation
+    ├── architecture/    # System design
+    ├── deployment/      # Deployment guides
+    └── development/     # Dev guides
+```
 
 ## ⚡ Quick Start - One Command Deployment
 
@@ -26,11 +55,23 @@ make deploy
 ```
 
 **That's it!** After 3-5 minutes, access:
-- 🌐 **Frontend:** http://localhost:3000
-- 🔌 **Backend API:** http://localhost:8000
-- 📚 **API Docs:** http://localhost:8000/docs
+- 🌐 ## 🎯 Key Features http://localhost:3000
+- 🔌## 📖 Documentation
 
-📖 **Full deployment guide:** [DEPLOYMENT.md](./DEPLOYMENT.md) | **Quick reference:** [QUICK_START.md](./QUICK_START.md)
+### Development
+- [Development Setup](docs/development/SETUP.md)
+- [Contributing Guidelines](docs/development/CONTRIBUTING.md)
+- [Testing Guide](docs/development/TESTING.md)
+
+### Architecture
+- [System Architecture](docs/architecture/SYSTEM_DESIGN.md)
+- [API Reference](docs/api/REFERENCE.md)
+- [Database Schema](docs/architecture/DATABASE.md)
+
+### Deployment
+- [Docker Deployment](docs/deployment/DOCKER.md)
+- [Kubernetes Guide](docs/deployment/KUBERNETES.md)
+- [Production Checklist](docs/deployment/PRODUCTION.md) | **Quick reference:** [QUICK_START.md](./QUICK_START.md)
 
 ---
 
@@ -48,11 +89,28 @@ make deploy
 
 ## Architecture
 
-### Technology Stack
+### 💻 Technology Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
-- **Backend**: FastAPI, LangGraph, PostgreSQL, Redis
-- **AI Layer**: Together AI, LangChain, OpenAI Embeddings
+### Backend
+- **Framework**: FastAPI (Python 3.11+)
+- **Database**: PostgreSQL 14+ with pgvector
+- **Cache**: Redis 6+ with Sentinel
+- **Queue**: Celery + RabbitMQ
+- **Auth**: OAuth2 + JWT + MFA
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **UI**: React 18 + TypeScript
+- **Styling**: TailwindCSS + shadcn/ui
+- **State**: Zustand + React Query
+- **Charts**: Recharts + D3.js
+
+### Infrastructure
+- **Containers**: Docker + Docker Compose
+- **Orchestration**: Kubernetes (EKS/GKE/AKS)
+- **Monitoring**: Prometheus + Grafana + Loki
+- **CI/CD**: GitHub Actions
+- **Cloud**: AWS/GCP/Azure readybeddings
 
 ### Project Structure
 
