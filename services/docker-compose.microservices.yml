@@ -248,34 +248,6 @@ services:
     depends_on:
       - prometheus
 
-  # Service Discovery (Consul)
-  consul:
-    image: consul:latest
-    ports:
-      - "8500:8500"
-      - "8600:8600/udp"
-    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
-    networks:
-      - valueverse-network
-
-  # Distributed Tracing (Jaeger)
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    environment:
-      COLLECTOR_ZIPKIN_HOST_PORT: 9411
-    ports:
-      - "5775:5775/udp"
-      - "6831:6831/udp"
-      - "6832:6832/udp"
-      - "5778:5778"
-      - "16686:16686"  # Jaeger UI
-      - "14250:14250"
-      - "14268:14268"
-      - "14269:14269"
-      - "9411:9411"
-    networks:
-      - valueverse-network
-
 networks:
   valueverse-network:
     driver: bridge

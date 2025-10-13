@@ -157,10 +157,7 @@ services:
     environment:
       COLLECTOR_ZIPKIN_HOST_PORT: 9411
       COLLECTOR_OTLP_ENABLED: true
-      SPAN_STORAGE_TYPE: badger
-      BADGER_EPHEMERAL: false
-      BADGER_DIRECTORY_VALUE: /badger/data
-      BADGER_DIRECTORY_KEY: /badger/key
+      SPAN_STORAGE_TYPE: memory
       METRICS_BACKEND: prometheus
       PROMETHEUS_SERVER_URL: http://prometheus:9090
     ports:
@@ -176,7 +173,6 @@ services:
       - "4317:4317"       # OTLP gRPC
       - "4318:4318"       # OTLP HTTP
     volumes:
-      - jaeger_data:/badger
       - ./jaeger/jaeger-config.yaml:/etc/jaeger/config.yaml:ro
     networks:
       - valueverse-network
