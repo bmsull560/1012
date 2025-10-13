@@ -10,7 +10,7 @@ from app.agents.base import BaseAgent, AgentContext, AgentStage
 from app.services.research import CompanyResearchService
 from app.services.pattern_matching import PatternMatchingService
 from app.services.value_synthesis import ValueSynthesisService
-from app.models.schemas import ValueHypothesis, ValueDriver, IndustryPattern
+from app.schemas.value_models import ValueHypothesis, ValueDriver, IndustryPattern
 
 
 class ValueArchitect(BaseAgent):
