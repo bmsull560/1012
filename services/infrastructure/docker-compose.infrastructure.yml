@@ -98,7 +98,7 @@ services:
   # Service Discovery - Consul
   # ============================================
   consul:
-    image: consul:latest
+    image: hashicorp/consul:latest
     command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0 -config-file=/consul/config/consul.json
     volumes:
       - ./consul/consul.json:/consul/config/consul.json:ro
@@ -137,15 +137,17 @@ services:
       - valueverse-network
 
   # Registrator - Automatic service registration
-  registrator:
-    image: gliderlabs/registrator:latest
-    command: -internal consul://consul:8500
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock
-    depends_on:
-      - consul
-    networks:
-      - valueverse-network
+  # NOTE: Commented out due to old manifest format issue
+  # You can enable manual service registration instead
+  # registrator:
+  #   image: gliderlabs/registrator:latest
+  #   command: -internal consul://consul:8500
+  #   volumes:
+  #     - /var/run/docker.sock:/tmp/docker.sock
+  #   depends_on:
+  #     - consul
+  #   networks:
+  #     - valueverse-network
 
   # ============================================
   # Distributed Tracing - Jaeger
