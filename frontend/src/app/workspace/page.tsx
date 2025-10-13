@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { DualBrainLayout } from '@/components/layout/DualBrainLayout'
-import { ValueGraph } from '@/components/graph/ValueGraph'
+import { SimpleValueGraph } from '@/components/graph/SimpleValueGraph'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { AgentOrchestrator } from '@/components/agents/AgentOrchestrator'
 import { MetricsDashboard } from '@/components/metrics/MetricsDashboard'
@@ -160,7 +160,7 @@ export default function WorkspacePage() {
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
         {activeView === 'graph' && (
-          <ValueGraph
+          <SimpleValueGraph
             nodes={mockNodes}
             edges={mockEdges}
             onNodeClick={setSelectedNode}
