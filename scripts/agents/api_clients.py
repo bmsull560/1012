@@ -1,262 +1,237 @@
+#!/usr/bin/env python3
 """
-API clients for AI providers (OpenAI and Anthropic).
-Handles rate limiting, retries, and cost tracking.
+Async client utilities for Together.ai with structured logging and streaming.
+
+This module provides a robust, async-first client for interacting with the
+Together AI API. It is designed for use in a multi-agent architecture, such as
+within a FastAPI application context, and includes features like retry logic,
+structured logging, and backward compatibility shims for a smooth migration.
 """
 
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
 import os
 import time
-import json
-from typing import Dict, List, Optional, Tuple
+from typing import AsyncGenerator, Dict, Optional
+
 import httpx
-from anthropic import Anthropic
-from openai import OpenAI
+
+# Configure module-level logger
+logger = logging.getLogger(__name__)
 
 
-class RateLimitError(Exception):
-    """Raised when API rate limit is exceeded."""
-    pass
+class TogetherClient:
+    """
+    An async-native client for the Together AI API with support for streaming,
+    retries, and structured logging.
+    """
 
+    BASE_URL = "https://api.together.xyz/v1/chat/completions"
+    DEFAULT_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
-class APIClient:
-    """Base class for AI API clients with rate limiting and retry logic."""
-    
-    def __init__(self, max_retries: int = 3, retry_delay: float = 1.0):
+    def __init__(self, api_key: Optional[str] = None, max_retries: int = 3) -> None:
+        """
+        Initializes the client, loading the API key and setting up the
+        HTTP client.
+
+        Raises:
+            RuntimeError: If the TOGETHER_API_KEY is not found in environment variables.
+        """
+        self.api_key = api_key or os.getenv("TOGETHER_API_KEY")
+        if not self.api_key:
+            raise RuntimeError(
+                "TOGETHER_API_KEY not found. Please set it in your environment."
+            )
+
         self.max_retries = max_retries
-        self.retry_delay = retry_delay
-        self.total_cost = 0.0
-        self.total_tokens = {"input": 0, "output": 0}
-    
-    def _exponential_backoff(self, attempt: int) -> float:
-        """Calculate exponential backoff delay."""
-        return self.retry_delay * (2 ** attempt)
-    
-    def _track_usage(self, input_tokens: int, output_tokens: int, cost: float):
-        """Track token usage and costs."""
-        self.total_tokens["input"] += input_tokens
-        self.total_tokens["output"] += output_tokens
-        self.total_cost += cost
-        
-        print(f"📊 Tokens: {input_tokens} in + {output_tokens} out | Cost: ${cost:.4f}")
-    
-    def get_usage_summary(self) -> Dict:
-        """Get usage summary."""
-        return {
-            "total_cost": self.total_cost,
-            "total_tokens": self.total_tokens,
-            "total_requests": self.total_tokens["input"] > 0
+        self._client = httpx.AsyncClient(
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=httpx.Timeout(60.0),
+        )
+
+    async def _retry_logic(
+        self, attempt: int, error: Exception
+    ) -> bool:
+        """Determines if a retry is warranted and logs the attempt."""
+        if attempt >= self.max_retries - 1:
+            return False
+
+        delay = 2 ** attempt
+        logger.warning(
+            "Request failed (attempt %d/%d): %s. Retrying in %ds...",
+            attempt + 1,
+            self.max_retries,
+            error,
+            delay,
+        )
+        await asyncio.sleep(delay)
+        return True
+
+    async def generate(
+        self,
+        prompt: str,
+        model: str = DEFAULT_MODEL,
+        **kwargs,
+    ) -> str:
+        """
+        Generates a complete text response from a prompt.
+
+        Args:
+            prompt: The user prompt to send to the model.
+            model: The model identifier to use for the completion.
+            **kwargs: Additional parameters to pass to the API, e.g., `max_tokens`.
+
+        Returns:
+            The complete, generated text from the model.
+
+        Raises:
+            RuntimeError: If the request fails after all retry attempts.
+        """
+        start_time = time.monotonic()
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+            **kwargs,
         }
 
-
-class AnthropicClient(APIClient):
-    """Client for Anthropic Claude API."""
-    
-    # Pricing per 1M tokens (as of Oct 2024)
-    PRICING = {
-        "claude-3-opus-20240229": {"input": 15.00, "output": 75.00},
-        "claude-3-sonnet-20240229": {"input": 3.00, "output": 15.00},
-        "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25}
-    }
-    
-    def __init__(self, api_key: Optional[str] = None):
-        super().__init__()
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
-        if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY not found")
-        
-        self.client = Anthropic(api_key=self.api_key)
-    
-    def _calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
-        """Calculate cost for Claude API call."""
-        pricing = self.PRICING.get(model, self.PRICING["claude-3-sonnet-20240229"])
-        cost = (input_tokens * pricing["input"] + output_tokens * pricing["output"]) / 1_000_000
-        return cost
-    
-    def complete(
-        self,
-        prompt: str,
-        model: str = "claude-3-sonnet-20240229",
-        max_tokens: int = 4096,
-        temperature: float = 0.7,
-        system: Optional[str] = None
-    ) -> Tuple[str, Dict]:
-        """
-        Call Claude API with retry logic.
-        
-        Returns:
-            Tuple of (response_text, metadata)
-        """
-        messages = [{"role": "user", "content": prompt}]
-        
         for attempt in range(self.max_retries):
             try:
-                response = self.client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    system=system if system else "You are a helpful AI assistant.",
-                    messages=messages
+                response = await self._client.post(self.BASE_URL, json=payload)
+                response.raise_for_status()
+                data = response.json()
+                text = data["choices"][0]["message"]["content"]
+                logger.info(
+                    "Generated response from %s in %.2fs",
+                    model,
+                    time.monotonic() - start_time,
                 )
-                
-                # Extract response
-                response_text = response.content[0].text
-                
-                # Track usage
-                input_tokens = response.usage.input_tokens
-                output_tokens = response.usage.output_tokens
-                cost = self._calculate_cost(model, input_tokens, output_tokens)
-                self._track_usage(input_tokens, output_tokens, cost)
-                
-                metadata = {
-                    "model": model,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost": cost,
-                    "stop_reason": response.stop_reason
-                }
-                
-                return response_text, metadata
-                
-            except Exception as e:
-                if "rate_limit" in str(e).lower() or "429" in str(e):
-                    if attempt < self.max_retries - 1:
-                        delay = self._exponential_backoff(attempt)
-                        print(f"⚠️  Rate limit hit, retrying in {delay}s...")
-                        time.sleep(delay)
-                        continue
-                    else:
-                        raise RateLimitError(f"Rate limit exceeded after {self.max_retries} retries")
-                else:
-                    print(f"❌ Error calling Claude API: {str(e)}")
-                    raise
-        
-        raise Exception("Failed to get response after retries")
+                return text
+            except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                if not await self._retry_logic(attempt, e):
+                    logger.error("Failed to generate response after %d retries.", self.max_retries)
+                    raise RuntimeError("Failed to get a response from Together AI.") from e
 
+        # This line should be unreachable, but acts as a safeguard.
+        raise RuntimeError("Exhausted retries for generate request.")
 
-class OpenAIClient(APIClient):
-    """Client for OpenAI GPT API."""
-    
-    # Pricing per 1M tokens (as of Oct 2024)
-    PRICING = {
-        "gpt-4-turbo-preview": {"input": 10.00, "output": 30.00},
-        "gpt-4": {"input": 30.00, "output": 60.00},
-        "gpt-4-32k": {"input": 60.00, "output": 120.00},
-        "gpt-3.5-turbo": {"input": 0.50, "output": 1.50}
-    }
-    
-    def __init__(self, api_key: Optional[str] = None):
-        super().__init__()
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OPENAI_API_KEY not found")
-        
-        self.client = OpenAI(api_key=self.api_key)
-    
-    def _calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
-        """Calculate cost for OpenAI API call."""
-        # Map model variations to base pricing
-        base_model = model
-        if "gpt-4-turbo" in model or "gpt-4-1106" in model:
-            base_model = "gpt-4-turbo-preview"
-        elif "gpt-4" in model and "32k" not in model:
-            base_model = "gpt-4"
-        elif "gpt-3.5" in model:
-            base_model = "gpt-3.5-turbo"
-        
-        pricing = self.PRICING.get(base_model, self.PRICING["gpt-4"])
-        cost = (input_tokens * pricing["input"] + output_tokens * pricing["output"]) / 1_000_000
-        return cost
-    
-    def complete(
+    async def stream_generate(
         self,
         prompt: str,
-        model: str = "gpt-4-turbo-preview",
-        max_tokens: int = 4096,
-        temperature: float = 0.7,
-        system: Optional[str] = None
-    ) -> Tuple[str, Dict]:
+        model: str = DEFAULT_MODEL,
+        **kwargs,
+    ) -> AsyncGenerator[str, None]:
         """
-        Call OpenAI API with retry logic.
-        
-        Returns:
-            Tuple of (response_text, metadata)
+        Streams a response from the model, yielding tokens as they arrive.
+
+        Args:
+            prompt: The user prompt to send to the model.
+            model: The model identifier to use for the completion.
+            **kwargs: Additional parameters to pass to the API, e.g., `max_tokens`.
+
+        Yields:
+            Tokens (strings) as they are generated by the model.
+
+        Raises:
+            RuntimeError: If the request fails after all retry attempts.
         """
-        messages = []
-        if system:
-            messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
-        
+        start_time = time.monotonic()
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": True,
+            **kwargs,
+        }
+
         for attempt in range(self.max_retries):
             try:
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    max_tokens=max_tokens,
-                    temperature=temperature
-                )
-                
-                # Extract response
-                response_text = response.choices[0].message.content
-                
-                # Track usage
-                input_tokens = response.usage.prompt_tokens
-                output_tokens = response.usage.completion_tokens
-                cost = self._calculate_cost(model, input_tokens, output_tokens)
-                self._track_usage(input_tokens, output_tokens, cost)
-                
-                metadata = {
-                    "model": model,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost": cost,
-                    "finish_reason": response.choices[0].finish_reason
-                }
-                
-                return response_text, metadata
-                
-            except Exception as e:
-                if "rate_limit" in str(e).lower() or "429" in str(e):
-                    if attempt < self.max_retries - 1:
-                        delay = self._exponential_backoff(attempt)
-                        print(f"⚠️  Rate limit hit, retrying in {delay}s...")
-                        time.sleep(delay)
-                        continue
-                    else:
-                        raise RateLimitError(f"Rate limit exceeded after {self.max_retries} retries")
-                else:
-                    print(f"❌ Error calling OpenAI API: {str(e)}")
-                    raise
-        
-        raise Exception("Failed to get response after retries")
+                async with self._client.stream("POST", self.BASE_URL, json=payload) as resp:
+                    resp.raise_for_status()
+                    async for chunk in resp.aiter_lines():
+                        if chunk.startswith("data:"):
+                            data = chunk.split("data:", 1)[1].strip()
+                            if data == "[DONE]":
+                                break
+                            try:
+                                payload_json = json.loads(data)
+                                delta = payload_json["choices"][0]["delta"].get("content")
+                                if delta:
+                                    yield delta
+                            except (json.JSONDecodeError, KeyError):
+                                logger.warning("Received malformed stream chunk: %s", data)
+                    logger.info(
+                        "Streamed response from %s in %.2fs",
+                        model,
+                        time.monotonic() - start_time,
+                    )
+                    return
+            except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                if not await self._retry_logic(attempt, e):
+                    logger.error("Failed to stream response after %d retries.", self.max_retries)
+                    raise RuntimeError("Failed to get a streaming response from Together AI.") from e
+
+        raise RuntimeError("Exhausted retries for stream_generate request.")
 
 
-def get_anthropic_client() -> AnthropicClient:
-    """Get configured Anthropic client."""
-    return AnthropicClient()
+def get_together_client() -> "TogetherClient":
+    """Factory function to get an instance of the TogetherClient."""
+    return TogetherClient()
 
 
-def get_openai_client() -> OpenAIClient:
-    """Get configured OpenAI client."""
-    return OpenAIClient()
+def get_anthropic_client() -> "TogetherClient":
+    """
+    Backward-compatibility shim for dependent agents.
+
+    Logs a warning and returns the new TogetherClient, ensuring that agents
+    importing `get_anthropic_client` continue to work without modification.
+    """
+    logger.warning("get_anthropic_client() is deprecated; using TogetherClient instead.")
+    return TogetherClient()
 
 
+# --- Executable Smoke Test ---
 if __name__ == "__main__":
-    # Test the clients
-    print("Testing API clients...")
-    
-    # Test Anthropic
-    try:
-        claude = get_anthropic_client()
-        response, meta = claude.complete("Say 'Hello from Claude!'", max_tokens=50)
-        print(f"✅ Claude: {response}")
-        print(f"   Cost: ${meta['cost']:.4f}")
-    except Exception as e:
-        print(f"❌ Claude test failed: {e}")
-    
-    # Test OpenAI
-    try:
-        gpt = get_openai_client()
-        response, meta = gpt.complete("Say 'Hello from GPT!'", max_tokens=50)
-        print(f"✅ GPT: {response}")
-        print(f"   Cost: ${meta['cost']:.4f}")
-    except Exception as e:
-        print(f"❌ GPT test failed: {e}")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    async def _test():
+        """Runs a quick smoke test of the client's methods."""
+        print("--- Running Together AI Client Smoke Test ---")
+        client = None
+        try:
+            client = TogetherClient()
+
+            # 1. Test full generation
+            print("\n1. Full response test:")
+            full_response = await client.generate(
+                "Hello from the ValueVerse platform!",
+                max_tokens=20,
+            )
+            print(f"   -> Response: '{full_response.strip()}'")
+
+            # 2. Test streaming generation
+            print("\n2. Streaming test:")
+            print("   -> Streaming: ", end="", flush=True)
+            async for token in client.stream_generate(
+                "Write a short haiku about asynchronous code.",
+                max_tokens=20,
+            ):
+                print(token, end="", flush=True)
+            print("\n--- Test Complete ---")
+
+        except RuntimeError as e:
+            print(f"\n--- A critical error occurred: {e} ---")
+            print("Please ensure your TOGETHER_API_KEY is set correctly.")
+        finally:
+            if client and client._client:
+                await client._client.aclose()
+
+    asyncio.run(_test())

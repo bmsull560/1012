@@ -4,16 +4,17 @@ Agent 1: Design Analyzer
 Analyzes design documentation and extracts component specifications.
 """
 
+import asyncio
 import os
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.api_clients import get_anthropic_client
+from agents.api_clients import get_together_client
 from agents.prompt_templates import get_prompt
 
 
@@ -44,7 +45,6 @@ def read_design_docs(docs_dir: str = "docs") -> str:
 
 def extract_json_from_response(response: str) -> Dict:
     """Extract JSON object from AI response."""
-    # Try to find JSON in code blocks
     import re
     
     # Pattern 1: ```json ... ```
@@ -72,7 +72,7 @@ def extract_json_from_response(response: str) -> Dict:
     raise ValueError("Could not extract valid JSON from AI response")
 
 
-def analyze_design(component_name: str, design_docs: str) -> Dict:
+async def analyze_design(component_name: str, design_docs: str) -> Dict:
     """
     Analyze design documentation and generate component specification.
     
@@ -85,84 +85,76 @@ def analyze_design(component_name: str, design_docs: str) -> Dict:
     """
     print(f"\n🔍 Agent 1: Analyzing design for {component_name}...")
     
-    # Get API client (Claude-3-Opus for deep analysis)
-    client = get_anthropic_client()
+    client = get_together_client()
     
-    # Get prompt template
-    prompt = get_prompt(
-        'design_analyzer',
-        component_name=component_name,
-        design_docs=design_docs
-    )
-    
-    # Call AI with long context window
-    print("🤖 Calling Claude-3-Opus for design analysis...")
-    response, metadata = client.complete(
-        prompt=prompt,
-        model="claude-3-opus-20240229",
-        max_tokens=4096,
-        temperature=0.3  # Lower temperature for more consistent structured output
-    )
-    
-    print(f"✅ Received response ({metadata['output_tokens']} tokens, ${metadata['cost']:.4f})")
-    
-    # Extract JSON from response
     try:
-        spec = extract_json_from_response(response)
-        print(f"✅ Extracted component specification")
-    except ValueError as e:
-        print(f"⚠️  Warning: {e}")
-        print("📝 Raw response:")
-        print(response[:500] + "..." if len(response) > 500 else response)
+        # Get prompt template
+        prompt = get_prompt(
+            'design_analyzer',
+            component_name=component_name,
+            design_docs=design_docs
+        )
         
-        # Create a basic spec as fallback
-        spec = {
-            "component": {
-                "name": component_name,
-                "type": "interface",
-                "priority": "medium",
-                "description": f"Generated specification for {component_name}"
-            },
-            "design_principles": ["dual-brain", "progressive-disclosure"],
-            "user_stories": [],
-            "technical_requirements": {
-                "framework": "Next.js 14",
-                "component_type": "'use client'",
-                "state_management": "local",
-                "styling": "tailwind",
-                "real_time": "none",
-                "accessibility": "WCAG 2.1 AA"
-            },
-            "props": {},
-            "state": {},
-            "behaviors": [],
-            "api_integrations": [],
-            "styling_requirements": {},
-            "progressive_disclosure": {},
-            "real_time_features": [],
-            "accessibility_requirements": [],
-            "dependencies": []
-        }
-        print("⚠️  Using fallback specification")
-    
-    # Validate required fields
-    required_fields = ['component', 'design_principles', 'technical_requirements']
-    for field in required_fields:
-        if field not in spec:
-            print(f"⚠️  Warning: Missing required field '{field}' in specification")
-    
-    # Add metadata
-    spec['_metadata'] = {
-        'agent': 'design_analyzer',
-        'model': metadata['model'],
-        'tokens': {'input': metadata['input_tokens'], 'output': metadata['output_tokens']},
-        'cost': metadata['cost']
-    }
-    
-    return spec
+        # Call AI with long context window
+        print("🤖 Calling Together AI for design analysis...")
+        response = await client.generate(
+            prompt=prompt,
+            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            max_tokens=4096,
+            temperature=0.3  # Lower temperature for more consistent structured output
+        )
+        
+        # Extract JSON from response
+        try:
+            spec = extract_json_from_response(response)
+            print(f"✅ Extracted component specification")
+        except ValueError as e:
+            print(f"⚠️  Warning: {e}")
+            print("📝 Raw response:")
+            print(response[:500] + "..." if len(response) > 500 else response)
+            
+            # Create a basic spec as fallback
+            spec = {
+                "component": {
+                    "name": component_name,
+                    "type": "interface",
+                    "priority": "medium",
+                    "description": f"Generated specification for {component_name}"
+                },
+                "design_principles": ["dual-brain", "progressive-disclosure"],
+                "user_stories": [],
+                "technical_requirements": {
+                    "framework": "Next.js 14",
+                    "component_type": "'use client'",
+                    "state_management": "local",
+                    "styling": "tailwind",
+                    "real_time": "none",
+                    "accessibility": "WCAG 2.1 AA"
+                },
+                "props": {},
+                "state": {},
+                "behaviors": [],
+                "api_integrations": [],
+                "styling_requirements": {},
+                "progressive_disclosure": {},
+                "real_time_features": [],
+                "accessibility_requirements": [],
+                "dependencies": []
+            }
+            print("⚠️  Using fallback specification")
+        
+        # Validate required fields
+        required_fields = ['component', 'design_principles', 'technical_requirements']
+        for field in required_fields:
+            if field not in spec:
+                print(f"⚠️  Warning: Missing required field '{field}' in specification")
+        
+        return spec
+    finally:
+        await client.close()
 
 
-def main():
+async def main():
     """Main execution."""
     try:
         # Get component name from request or environment
@@ -185,7 +177,7 @@ def main():
         design_docs = read_design_docs()
         
         # Analyze design
-        spec = analyze_design(component_name, design_docs)
+        spec = await analyze_design(component_name, design_docs)
         
         # Save specification
         output_dir = 'output'
@@ -203,7 +195,6 @@ def main():
         print(f"   Type: {spec['component']['type']}")
         print(f"   Priority: {spec['component']['priority']}")
         print(f"   Design Principles: {', '.join(spec.get('design_principles', []))}")
-        print(f"   Cost: ${spec['_metadata']['cost']:.4f}")
         
         print("\n✅ Agent 1 (Design Analyzer) completed successfully")
         
@@ -215,4 +206,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

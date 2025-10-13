@@ -1,6 +1,7 @@
+---
 name: AI UI Generator - Multi-Agent Orchestration
 
-on:
+"on":
   issues:
     types: [labeled]
   issue_comment:
@@ -24,27 +25,29 @@ permissions:
 
 jobs:
   generate-ui:
-    if: contains(github.event.issue.labels.*.name, 'generate-ui') || contains(github.event.comment.body, '/generate-ui')
+    if: contains(github.event.issue.labels.*.name, 'generate-ui') ||
+      contains(github.event.comment.body, '/generate-ui')
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install openai==1.12.0 anthropic==0.18.0 httpx==0.26.0 pydantic==2.5.0 python-dotenv==0.20.0
+          pip install together==1.2.0 httpx==0.26.0 \
+            pydantic==2.5.0 python-dotenv==0.20.0
           pip install PyGithub==2.1.1 gitpython==3.1.41
-      
+
       - name: Parse Issue Request
         id: parse
         env:
@@ -52,78 +55,84 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
         run: |
           python scripts/agents/parse_request.py
-      
+
       - name: Agent 1 - Design Analyzer
         id: design_analyzer
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           COMPONENT_NAME: ${{ steps.parse.outputs.component_name }}
         run: |
           echo "🔍 Analyzing design specifications..."
           python scripts/agents/design_analyzer.py
-      
+
       - name: Post Design Analysis
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const analysis = JSON.parse(fs.readFileSync('output/component_spec.json', 'utf8'));
-            
+            const analysis = JSON.parse(
+              fs.readFileSync('output/component_spec.json', 'utf8')
+            );
+
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🔍 Design Analysis Complete\n\n` +
-                    `**Component**: ${analysis.component.name}\n` +
-                    `**Type**: ${analysis.component.type}\n` +
-                    `**Priority**: ${analysis.component.priority}\n\n` +
-                    `**Design Principles**:\n${analysis.design_principles.map(p => `- ${p}`).join('\n')}\n\n` +
-                    `Proceeding to architecture planning...`
+              body:
+                `## 🔍 Design Analysis Complete\n\n` +
+                `**Component**: ${analysis.component.name}\n` +
+                `**Type**: ${analysis.component.type}\n` +
+                `**Priority**: ${analysis.component.priority}\n\n` +
+                `**Design Principles**:\n${analysis.design_principles
+                  .map(p => `- ${p}`)
+                  .join('\n')}\n\n` +
+                `Proceeding to architecture planning...`
             });
-      
+
       - name: Agent 2 - Architecture Planner
         id: architecture_planner
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "🏗️ Planning component architecture..."
           python scripts/agents/architecture_planner.py
-      
+
       - name: Agent 3 - Component Generator
         id: component_generator
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "💻 Generating component code..."
           python scripts/agents/component_generator.py
-      
+
       - name: Agent 4 - Integration Engineer
         id: integration_engineer
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "🔌 Adding API integrations..."
           python scripts/agents/integration_engineer.py
-      
+
       - name: Agent 5 - Quality Reviewer
         id: quality_reviewer
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "✅ Running quality checks..."
           python scripts/agents/quality_reviewer.py
-      
+
       - name: Validate TypeScript
         run: |
           cd frontend
           npm install
           npx tsc --noEmit || echo "TypeScript validation had warnings"
-      
+
       - name: Run ESLint
         run: |
           cd frontend
-          npx eslint generated_code/ --fix || echo "ESLint found fixable issues"
-      
+          npx eslint generated_code/ --fix || \
+            echo "ESLint found fixable issues"
+
       - name: Create Pull Request
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -132,153 +141,47 @@ jobs:
           issue_num=$ISSUE_NUMBER
           component_name=$(cat output/component_spec.json | jq -r '.component.name')
           branch="ai-ui-gen-${issue_num}-${component_name}"
-          
-          # Configure git
+
           git config user.name "AI UI Generator Bot"
           git config user.email "ai-ui-gen@valueverse.dev"
-          
-          # Create branch
           git checkout -b "$branch"
-          
-          # Copy generated files to frontend
           cp -r output/generated_code/* frontend/src/
-          
-          # Add files
-          git add frontend/src/
-          git add output/
-          
+          git add frontend/src/ output/
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          
-          # Commit
-          git commit -m "feat: AI-generated UI component - ${component_name}
 
-          Generated by multi-agent orchestration system:
-          - Agent 1: Design Analysis (Claude-3-Opus)
-          - Agent 2: Architecture Planning (Claude-3-Sonnet)  
-          - Agent 3: Component Generation (GPT-4)
-          - Agent 4: Integration Engineering (Claude-3-Sonnet)
-          - Agent 5: Quality Review (GPT-4)
-          
-          Component: ${component_name}
-          Based on: docs/design_brief.md
-          
+          git commit -m "feat: AI-gen component - ${component_name}
+
+          Generated by Together.ai orchestration system:
+          - Design Analysis: Llama-3.1-70B
+          - Architecture Planning: Llama-3.1-8B
+          - Component Generation: Llama-3.1-70B
+          - Integration Engineering: Llama-3.1-8B
+          - Quality Review: Llama-3.1-8B
+
           Closes #${issue_num}"
-          
-          # Push
+
           git push origin "$branch"
-          
-          # Read quality report
+
           quality_report=$(cat output/quality_report.json | jq -r '.overall_score')
           files_generated=$(find output/generated_code -type f | wc -l)
-          
-          # Create PR
+
           gh pr create \
             --title "🤖 AI-Generated UI: ${component_name}" \
-            --body "## 🤖 Multi-Agent UI Generation Complete
+            --body "Generated by Together.ai orchestration.
 
-          **Component**: ${component_name}
-          **Related Issue**: Closes #${issue_num}
-          
-          This PR was generated by our **Multi-Agent UI Generation System** using:
-          
-          ### 🎯 Agent Orchestration
-          
-          1. **🔍 Design Analyzer** (Claude-3-Opus)
-             - Analyzed design specifications from documentation
-             - Extracted component requirements and user stories
-             - Mapped to ValueVerse design principles
-          
-          2. **🏗️ Architecture Planner** (Claude-3-Sonnet)
-             - Planned file structure and dependencies
-             - Designed component hierarchy
-             - Defined data flow and integration points
-          
-          3. **💻 Component Generator** (GPT-4)
-             - Generated React/TypeScript components
-             - Applied Tailwind CSS styling
-             - Added accessibility features (ARIA, keyboard nav)
-             - Included error boundaries and loading states
-          
-          4. **🔌 Integration Engineer** (Claude-3-Sonnet)
-             - Connected to backend APIs
-             - Added WebSocket real-time features
-             - Implemented error handling
-             - Added React Query hooks
-          
-          5. **✅ Quality Reviewer** (GPT-4)
-             - TypeScript type checking
-             - ESLint validation
-             - Accessibility audit
-             - Security scan
-             - Performance check
-          
-          ### 📊 Generation Summary
-          
-          - **Files Generated**: ${files_generated}
-          - **Quality Score**: ${quality_report}/10
-          - **Generation Time**: ~$(date -u +%M) minutes
-          - **Design Principles**: Consumer simplicity + Enterprise power
-          
-          ### 🎨 Design Principles Applied
-          
-          - ✅ Dual-Brain Architecture (Chat + Canvas)
-          - ✅ Progressive Disclosure (3 UI levels)
-          - ✅ Real-time Updates (<100ms sync)
-          - ✅ Transparent AI Reasoning
-          - ✅ Accessible (WCAG 2.1 AA)
-          - ✅ Mobile Responsive
-          
-          ### 🧪 Testing Instructions
-          
-          1. Run \`docker-compose restart frontend\`
-          2. Navigate to the component route
-          3. Verify functionality matches specification
-          4. Test responsive behavior
-          5. Check accessibility with screen reader
-          
-          ### 🔍 Review Checklist
-          
-          - [ ] Component matches design specification
-          - [ ] Code follows project conventions
-          - [ ] TypeScript types are correct
-          - [ ] Styling is consistent with design system
-          - [ ] API integrations work as expected
-          - [ ] Real-time features function properly
-          - [ ] Accessibility is implemented
-          - [ ] Mobile responsive
-          - [ ] No console errors
-          
-          ### 📚 Documentation
-          
-          - **Design Reference**: docs/design_brief.md
-          - **Architecture**: See output/architecture_plan.json
-          - **Quality Report**: See output/quality_report.json
-          
-          ---
-          
-          **⚠️ AI-Generated Code**: This component was automatically generated by AI agents. Human review is **required** before merging.
-          
-          **🔧 Refinement**: Comment with specific changes needed and the bot will regenerate." \
+Files: ${files_generated}
+Quality: ${quality_report}/10" \
             --label "ai-generated" \
             --label "needs-review" \
             --label "ui-component"
-          
-          # Comment on issue
+
           pr_url=$(gh pr list --head "$branch" --json url --jq '.[0].url')
           gh issue comment $issue_num --body "## 🎉 UI Component Generated!
 
-          Your component has been generated by our multi-agent system: $pr_url
-          
-          ### Generated Components:
-          - ${component_name} with full functionality
-          - TypeScript types and interfaces
-          - API integrations
-          - Real-time WebSocket features
-          - Accessibility support
-          
-          ### Quality Score: ${quality_report}/10
-          
-          Please review the PR and provide feedback. The bot can refine the component based on your comments!"
+Your component has been generated by Together.ai system: ${pr_url}
+
+### Quality Score: ${quality_report}/10"

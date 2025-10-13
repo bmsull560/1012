@@ -4,6 +4,7 @@ Agent 2: Architecture Planner
 Plans component file structure, hierarchy, and data flow.
 """
 
+import asyncio
 import os
 import sys
 import json
@@ -12,8 +13,9 @@ from typing import Dict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.api_clients import get_anthropic_client
+from agents.api_clients import get_together_client
 from agents.prompt_templates import get_prompt
+from agents.design_analyzer import extract_json_from_response
 
 
 def get_codebase_structure(base_dir: str = "frontend/src") -> str:
@@ -40,7 +42,7 @@ def get_codebase_structure(base_dir: str = "frontend/src") -> str:
     return "\n".join(structure)
 
 
-def plan_architecture(component_spec: Dict) -> Dict:
+async def plan_architecture(component_spec: Dict) -> Dict:
     """
     Plan component architecture based on specification.
     
@@ -57,114 +59,104 @@ def plan_architecture(component_spec: Dict) -> Dict:
     # Get current codebase structure
     file_tree = get_codebase_structure()
     
-    # Get API client (Claude-3-Sonnet for balanced performance)
-    client = get_anthropic_client()
+    client = get_together_client()
     
-    # Get prompt template
-    prompt = get_prompt(
-        'architecture_planner',
-        component_spec=json.dumps(component_spec, indent=2),
-        file_tree=file_tree
-    )
-    
-    # Call AI
-    print("🤖 Calling Claude-3-Sonnet for architecture planning...")
-    response, metadata = client.complete(
-        prompt=prompt,
-        model="claude-3-sonnet-20240229",
-        max_tokens=3072,
-        temperature=0.4
-    )
-    
-    print(f"✅ Received response ({metadata['output_tokens']} tokens, ${metadata['cost']:.4f})")
-    
-    # Extract JSON from response
     try:
-        # Import the extraction function from design_analyzer
-        from agents.design_analyzer import extract_json_from_response
-        plan = extract_json_from_response(response)
-        print(f"✅ Extracted architecture plan")
-    except ValueError as e:
-        print(f"⚠️  Warning: {e}")
+        # Get prompt template
+        prompt = get_prompt(
+            'architecture_planner',
+            component_spec=json.dumps(component_spec, indent=2),
+            file_tree=file_tree
+        )
         
-        # Create a basic plan as fallback
-        plan = {
-            "files_to_create": [
-                {
-                    "path": f"frontend/src/components/{component_name}/index.tsx",
-                    "type": "component",
-                    "purpose": "Main component export",
-                    "dependencies": ["react"]
-                },
-                {
-                    "path": f"frontend/src/components/{component_name}/types.ts",
-                    "type": "types",
-                    "purpose": "TypeScript interfaces",
-                    "dependencies": []
-                }
-            ],
-            "component_hierarchy": {
-                component_name: {
-                    "children": [],
-                    "props_flow": "top-down",
-                    "state_management": "local state"
-                }
-            },
-            "imports_structure": {
-                "external": ["react"],
-                "internal": [],
-                "types": []
-            },
-            "data_flow": {
-                "user_interaction": "Component → Event Handler → State Update → Re-render",
-                "api_calls": "None",
-                "websocket": "None"
-            },
-            "integration_points": [],
-            "state_architecture": {
-                "global_state": None,
-                "local_state": [
+        # Call AI
+        print("🤖 Calling Together AI for architecture planning...")
+        response = await client.generate(
+            prompt=prompt,
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            max_tokens=3072,
+            temperature=0.4
+        )
+        
+        # Extract JSON from response
+        try:
+            plan = extract_json_from_response(response)
+            print(f"✅ Extracted architecture plan")
+        except ValueError as e:
+            print(f"⚠️  Warning: {e}")
+            
+            # Create a basic plan as fallback
+            plan = {
+                "files_to_create": [
                     {
-                        "name": "isOpen",
-                        "type": "boolean",
-                        "purpose": "Track open/closed state"
+                        "path": f"frontend/src/components/{component_name}/index.tsx",
+                        "type": "component",
+                        "purpose": "Main component export",
+                        "dependencies": ["react"]
+                    },
+                    {
+                        "path": f"frontend/src/components/{component_name}/types.ts",
+                        "type": "types",
+                        "purpose": "TypeScript interfaces",
+                        "dependencies": []
                     }
                 ],
-                "server_state": []
-            },
-            "reusable_patterns": [],
-            "styling_approach": {
-                "method": "Tailwind utility classes",
-                "theme_usage": "colors.primary",
-                "responsive": "mobile-first",
-                "dark_mode": "Future enhancement"
-            },
-            "testing_strategy": {
-                "unit_tests": f"frontend/src/components/{component_name}/__tests__/",
-                "integration_tests": "Test user interactions",
-                "accessibility_tests": "jest-axe"
+                "component_hierarchy": {
+                    component_name: {
+                        "children": [],
+                        "props_flow": "top-down",
+                        "state_management": "local state"
+                    }
+                },
+                "imports_structure": {
+                    "external": ["react"],
+                    "internal": [],
+                    "types": []
+                },
+                "data_flow": {
+                    "user_interaction": "Component → Event Handler → State Update → Re-render",
+                    "api_calls": "None",
+                    "websocket": "None"
+                },
+                "integration_points": [],
+                "state_architecture": {
+                    "global_state": None,
+                    "local_state": [
+                        {
+                            "name": "isOpen",
+                            "type": "boolean",
+                            "purpose": "Track open/closed state"
+                        }
+                    ],
+                    "server_state": []
+                },
+                "reusable_patterns": [],
+                "styling_approach": {
+                    "method": "Tailwind utility classes",
+                    "theme_usage": "colors.primary",
+                    "responsive": "mobile-first",
+                    "dark_mode": "Future enhancement"
+                },
+                "testing_strategy": {
+                    "unit_tests": f"frontend/src/components/{component_name}/__tests__/",
+                    "integration_tests": "Test user interactions",
+                    "accessibility_tests": "jest-axe"
+                }
             }
-        }
-        print("⚠️  Using fallback architecture plan")
-    
-    # Validate required fields
-    required_fields = ['files_to_create', 'component_hierarchy', 'data_flow']
-    for field in required_fields:
-        if field not in plan:
-            print(f"⚠️  Warning: Missing required field '{field}' in plan")
-    
-    # Add metadata
-    plan['_metadata'] = {
-        'agent': 'architecture_planner',
-        'model': metadata['model'],
-        'tokens': {'input': metadata['input_tokens'], 'output': metadata['output_tokens']},
-        'cost': metadata['cost']
-    }
-    
-    return plan
+            print("⚠️  Using fallback architecture plan")
+        
+        # Validate required fields
+        required_fields = ['files_to_create', 'component_hierarchy', 'data_flow']
+        for field in required_fields:
+            if field not in plan:
+                print(f"⚠️  Warning: Missing required field '{field}' in plan")
+        
+        return plan
+    finally:
+        await client.close()
 
 
-def main():
+async def main():
     """Main execution."""
     try:
         # Load component specification from Agent 1
@@ -182,7 +174,7 @@ def main():
         print(f"🎯 Planning architecture for: {component_name}")
         
         # Plan architecture
-        plan = plan_architecture(component_spec)
+        plan = await plan_architecture(component_spec)
         
         # Save architecture plan
         output_dir = 'output'
@@ -198,7 +190,6 @@ def main():
         print(f"   Files to create: {len(plan.get('files_to_create', []))}")
         print(f"   Integration points: {len(plan.get('integration_points', []))}")
         print(f"   State management: {plan.get('state_architecture', {}).get('global_state') or 'Local only'}")
-        print(f"   Cost: ${plan['_metadata']['cost']:.4f}")
         
         # List files
         print(f"\n📁 Files to be generated:")
@@ -215,4 +206,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

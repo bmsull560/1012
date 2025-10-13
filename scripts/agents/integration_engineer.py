@@ -4,16 +4,17 @@ Agent 4: Integration Engineer
 Adds API integrations and real-time features to generated components.
 """
 
+import asyncio
 import os
 import sys
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.api_clients import get_anthropic_client
+from agents.api_clients import get_together_client
 from agents.prompt_templates import get_prompt
 
 
@@ -73,7 +74,7 @@ def read_generated_code(output_dir: str = "output/generated_code") -> str:
     return "\n".join(all_code)
 
 
-def integrate_apis(component_code: str, architecture_plan: Dict) -> str:
+async def integrate_apis(component_code: str, architecture_plan: Dict) -> Tuple[str, Dict]:
     """
     Add API integrations to component code.
     
@@ -82,48 +83,56 @@ def integrate_apis(component_code: str, architecture_plan: Dict) -> str:
         architecture_plan: Architecture plan with integration points
     
     Returns:
-        Enhanced code with API integrations
+        Enhanced code with API integrations and metadata
     """
     print(f"\n🔌 Agent 4: Adding API integrations...")
     
     # Get API endpoints documentation
     api_endpoints = get_api_endpoints()
     
-    # Get API client (Claude-3-Sonnet for integration work)
-    client = get_anthropic_client()
+    client = get_together_client()
     
-    # Get prompt template
-    prompt = get_prompt(
-        'integration_engineer',
-        component_code=component_code,
-        api_endpoints=api_endpoints
-    )
-    
-    # Call AI
-    print("🤖 Calling Claude-3-Sonnet for API integration...")
-    response, metadata = client.complete(
-        prompt=prompt,
-        model="claude-3-sonnet-20240229",
-        max_tokens=4096,
-        temperature=0.4
-    )
-    
-    print(f"✅ Received response ({metadata['output_tokens']} tokens, ${metadata['cost']:.4f})")
-    
-    # Try to extract enhanced code
-    code_blocks = re.findall(r'```(?:typescript|tsx)?\n(.*?)```', response, re.DOTALL)
-    
-    if code_blocks:
-        enhanced_code = code_blocks[0]
-        print(f"✅ Extracted enhanced code")
-    else:
-        print("⚠️  Could not extract enhanced code, using original")
-        enhanced_code = component_code
-    
-    return enhanced_code, metadata
+    try:
+        # Get prompt template
+        prompt = get_prompt(
+            'integration_engineer',
+            component_code=component_code,
+            api_endpoints=api_endpoints
+        )
+        
+        # Call AI
+        print("🤖 Calling Together AI for API integration...")
+        response = await client.generate(
+            prompt=prompt,
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            max_tokens=4096,
+            temperature=0.4
+        )
+        
+        # Try to extract enhanced code
+        code_blocks = re.findall(r'```(?:typescript|tsx)?\n(.*?)```', response, re.DOTALL)
+        
+        if code_blocks:
+            enhanced_code = code_blocks[0]
+            print(f"✅ Extracted enhanced code")
+        else:
+            print("⚠️  Could not extract enhanced code, using original")
+            enhanced_code = component_code
+        
+        # This is a simplified metadata return. In a real scenario, you'd get this from the client.
+        metadata = {
+            'model': "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            'input_tokens': 0,
+            'output_tokens': 0,
+            'cost': 0
+        }
+        
+        return enhanced_code, metadata
+    finally:
+        await client.close()
 
 
-def apply_integrations(output_dir: str = "output/generated_code") -> Dict:
+async def apply_integrations(output_dir: str = "output/generated_code") -> Dict:
     """Apply integrations to all generated files."""
     path = Path(output_dir)
     
@@ -139,7 +148,7 @@ def apply_integrations(output_dir: str = "output/generated_code") -> Dict:
     component_code = read_generated_code(output_dir)
     
     # Apply integrations
-    enhanced_code, metadata = integrate_apis(component_code, architecture_plan)
+    enhanced_code, metadata = await integrate_apis(component_code, architecture_plan)
     
     # For now, save the enhanced code as a single integrated file
     # In a real implementation, we'd parse and update individual files
@@ -165,13 +174,13 @@ def apply_integrations(output_dir: str = "output/generated_code") -> Dict:
     return integration_metadata
 
 
-def main():
+async def main():
     """Main execution."""
     try:
         print(f"🎯 Adding API integrations to generated components")
         
         # Apply integrations
-        metadata = apply_integrations()
+        metadata = await apply_integrations()
         
         # Save metadata
         metadata_file = 'output/integration_metadata.json'
@@ -193,4 +202,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
