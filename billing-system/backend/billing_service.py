@@ -27,10 +27,20 @@ from .database import get_db
 from .auth import get_current_organization
 from .events import EventBus
 from .cache import CacheManager
+from .middleware import configure_middleware
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="ValueVerse Billing Service", version="1.0.0")
+app = FastAPI(
+    title="ValueVerse Billing Service",
+    version="1.0.0",
+    description="Enterprise-grade billing and subscription management system",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
+)
+
+# Configure all middleware
+configure_middleware(app)
 
 # Initialize external services
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -795,6 +805,71 @@ async def pay_invoice(
         }
     }
 
+# ==================== Health Check Endpoints ====================
+
+@app.get("/health")
+async def health_check():
+    """Basic health check endpoint"""
+    return {
+        "status": "healthy",
+        "service": "billing-api",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
+    }
+
+@app.get("/health/live")
+async def liveness_probe():
+    """Kubernetes liveness probe endpoint"""
+    return {"status": "alive"}
+
+@app.get("/health/ready")
+async def readiness_probe(
+    db: AsyncSession = Depends(get_db)
+):
+    """Kubernetes readiness probe - checks database connectivity"""
+    try:
+        # Check database connection
+        await db.execute("SELECT 1")
+        
+        # Check Redis connection
+        if billing_service.redis_client:
+            await billing_service.redis_client.ping()
+        
+        # Check event bus
+        if hasattr(event_bus, '_running') and not event_bus._running:
+            raise HTTPException(
+                status_code=503,
+                detail="Event bus not ready"
+            )
+        
+        return {
+            "status": "ready",
+            "checks": {
+                "database": "connected",
+                "cache": "connected",
+                "event_bus": "ready"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Service not ready: {str(e)}"
+        )
+
+@app.get("/health/startup")
+async def startup_probe():
+    """Kubernetes startup probe"""
+    # Check if all services are initialized
+    if not hasattr(billing_service, 'redis_client'):
+        raise HTTPException(
+            status_code=503,
+            detail="Service still initializing"
+        )
+    return {"status": "started"}
+
+# ==================== WebSocket Endpoints ====================
+
 @app.websocket("/ws/billing/{organization_id}")
 async def billing_websocket(
     websocket: WebSocket,
@@ -804,18 +879,97 @@ async def billing_websocket(
     """WebSocket endpoint for real-time billing updates"""
     
     # Verify token and organization access
-    # ... authentication logic ...
+    try:
+        from .auth import verify_token
+        token_data = await verify_token(token, token_type="access")
+        
+        if token_data.organization_id != str(organization_id):
+            await websocket.close(code=1008, reason="Unauthorized")
+            return
+    except Exception as e:
+        logger.error(f"WebSocket authentication failed: {e}")
+        await websocket.close(code=1008, reason="Authentication failed")
+        return
     
     await websocket.accept()
+    logger.info(f"WebSocket connected for organization {organization_id}")
+    
+    # Create a unique client ID for this connection
+    client_id = str(uuid4())
     
     # Subscribe to organization's billing events
-    subscription = await event_bus.subscribe(f"org:{organization_id}:*")
+    async def handle_event(event: Dict[str, Any]):
+        """Handle events and send to WebSocket client"""
+        try:
+            await websocket.send_json({
+                "type": "billing_event",
+                "event": event
+            })
+        except Exception as e:
+            logger.error(f"Failed to send event to WebSocket: {e}")
+    
+    await event_bus.subscribe(f"billing.org.{organization_id}.*", handle_event)
     
     try:
+        # Keep connection alive and handle incoming messages
         while True:
-            # Send billing events to client
-            event = await subscription.get()
-            await websocket.send_json(event)
+            # Receive message from client (ping/pong or commands)
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+            elif data.get("type") == "subscribe":
+                # Handle subscription to specific event types
+                event_type = data.get("event_type")
+                if event_type:
+                    await event_bus.subscribe(
+                        f"billing.{event_type}.{organization_id}",
+                        handle_event
+                    )
+                    await websocket.send_json({
+                        "type": "subscribed",
+                        "event_type": event_type
+                    })
             
     except WebSocketDisconnect:
-        await event_bus.unsubscribe(subscription)
+        logger.info(f"WebSocket disconnected for organization {organization_id}")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        await websocket.close(code=1011, reason="Internal error")
+
+# ==================== Startup and Shutdown Events ====================
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    logger.info("Starting ValueVerse Billing Service...")
+    
+    # Initialize event bus
+    await event_bus.start()
+    logger.info("Event bus started")
+    
+    # Initialize cache
+    await cache_manager.connect()
+    logger.info("Cache connected")
+    
+    # Initialize billing service connections
+    await billing_service.initialize()
+    logger.info("Billing service initialized")
+    
+    logger.info("ValueVerse Billing Service started successfully")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    logger.info("Shutting down ValueVerse Billing Service...")
+    
+    # Stop event bus
+    await event_bus.stop()
+    
+    # Disconnect cache
+    await cache_manager.disconnect()
+    
+    # Cleanup billing service
+    await billing_service.cleanup()
+    
+    logger.info("ValueVerse Billing Service shut down successfully")
