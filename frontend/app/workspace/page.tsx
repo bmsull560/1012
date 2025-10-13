@@ -51,7 +51,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
-import { useAgents } from "@/hooks/useAgents";
+import { useAgent } from "@/hooks/useAgentApi";  // Using REST API instead of WebSocket
 import { VALUE_DRIVERS, calculateTotalValue, generateScenarios, calculateNPV, calculatePayback, INDUSTRY_BENCHMARKS, calculateAdoptionFactor } from "@/utils/valueDrivers";
 import { ValueModelReport } from "@/components/value-model/ValueModelReport";
 import { WhatIfSliders } from "@/components/value-model/WhatIfSliders";
