@@ -6,43 +6,45 @@
 
 ValueVerse is an enterprise-grade platform that revolutionizes how businesses create, deliver, and prove customer value. By combining Living Value Graphs with Agentic Orchestration and an Adaptive Interface, ValueVerse transforms customer relationships from transactional to transformational.
 
-## Quick Start
+## ⚡ Quick Start - One Command Deployment
 
-### Prerequisites
+Deploy the entire application locally in under 5 minutes:
 
-- **Docker Desktop** (4GB RAM minimum, 8GB recommended)
-- **Visual Studio Code** with Dev Containers extension
-- **Python 3.11+**
-- **Git**
+### Linux/macOS
+```bash
+make deploy
+```
 
-### Setup
+### Windows (PowerShell)
+```powershell
+.\deploy.ps1
+```
 
-1.  **Clone the repository:**
+### Alternative (All platforms)
+```bash
+./deploy.sh
+```
 
-    ```bash
-    git clone <repository-url>
-    cd 1012
-    ```
+**That's it!** After 3-5 minutes, access:
+- 🌐 **Frontend:** http://localhost:3000
+- 🔌 **Backend API:** http://localhost:8000
+- 📚 **API Docs:** http://localhost:8000/docs
 
-2.  **Open in VS Code and use the Dev Container:**
+📖 **Full deployment guide:** [DEPLOYMENT.md](./DEPLOYMENT.md) | **Quick reference:** [QUICK_START.md](./QUICK_START.md)
 
-    - Open the project in VS Code (`code .`).
-    - When prompted, click "Reopen in Container" or press F1 and select "Dev Containers: Reopen in Container".
-    - The first build takes 3-5 minutes.
+---
 
-3.  **Set up the Python Environment:**
-    The project now uses a virtual environment to manage dependencies.
+## Prerequisites
 
-    ```bash
-    # Create the virtual environment
-    python3 -m venv .venv
+**Required:**
+- Docker Desktop (20.10+) - [Install Docker](https://docs.docker.com/get-docker/)
+- 4GB+ RAM (8GB recommended)
+- 10GB+ disk space
 
-    # Activate the virtual environment
-    source .venv/bin/activate
-
-    # Install dependencies
-    pip install -r requirements.txt
-    ```
+**Optional:**
+- Visual Studio Code with Dev Containers extension
+- Python 3.11+ (for local development without Docker)
+- Git
 
 ## Architecture
 
