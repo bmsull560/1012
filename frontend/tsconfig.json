@@ -31,8 +31,6 @@
     "noUnusedLocals": true,
     // Enable noUnusedParameters
     "noUnusedParameters": true,
-    // Enable noImplicitUseStrict
-    "noImplicitUseStrict": true,
     // Enable module
     "module": "commonjs",
     // Enable esModuleInterop
@@ -53,11 +51,13 @@
     "baseUrl": ".",
     // Enable paths
     "paths": {
-      "@components/*": ["src/components/*"],
-      "@lib/*": ["src/lib/*"],
-      "@stores/*": ["src/stores/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@types/*": ["src/types/*"]
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/types/*": ["./src/types/*"]
     },
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
