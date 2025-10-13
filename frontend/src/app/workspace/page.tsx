@@ -1,8 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 
-export default function SimpleWorkspacePage() {
+export default function EnterpriseWorkspace() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
