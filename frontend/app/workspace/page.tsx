@@ -396,9 +396,9 @@ export default function WorkspacePage() {
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b px-6 py-4">
+      <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 via-white to-blue-50">
+        {/* Header with Gradient */}
+        <div className="bg-gradient-to-r from-white via-blue-50 to-purple-50 border-b border-gray-200 shadow-sm px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {!isSidebarOpen && (
@@ -406,37 +406,46 @@ export default function WorkspacePage() {
                   size="sm"
                   variant="ghost"
                   onClick={() => setIsSidebarOpen(true)}
+                  className="hover:bg-white/60"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               )}
               
-              {/* Agent Selector */}
+              {/* Enhanced Agent Selector */}
               <div className="flex items-center gap-2">
                 {AGENTS.map((agent) => (
-                  <Button
+                  <motion.div
                     key={agent.id}
-                    size="sm"
-                    variant={activeAgent.id === agent.id ? "default" : "outline"}
-                    onClick={() => setActiveAgent(agent)}
-                    className="gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <agent.icon className="h-4 w-4" />
-                    {agent.name}
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant={activeAgent.id === agent.id ? "default" : "outline"}
+                      onClick={() => setActiveAgent(agent)}
+                      className={cn(
+                        "gap-2 transition-all duration-300",
+                        activeAgent.id === agent.id && `bg-gradient-to-r ${agent.color} text-white border-none shadow-md`
+                      )}
+                    >
+                      <agent.icon className="h-4 w-4" />
+                      {agent.name}
+                    </Button>
+                  </motion.div>
                 ))}
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Enhanced Actions */}
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" onClick={clearConversation}>
+              <Button size="sm" variant="ghost" onClick={clearConversation} className="hover:bg-white/80">
                 <RefreshCw className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" onClick={exportConversation}>
+              <Button size="sm" variant="ghost" onClick={exportConversation} className="hover:bg-white/80">
                 <Download className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setIsFullscreen(!isFullscreen)}>
+              <Button size="sm" variant="ghost" onClick={() => setIsFullscreen(!isFullscreen)} className="hover:bg-white/80">
                 {isFullscreen ? (
                   <Minimize2 className="h-4 w-4" />
                 ) : (
