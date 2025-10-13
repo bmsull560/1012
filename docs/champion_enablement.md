@@ -11,6 +11,7 @@ The platform enables champions to instantly address stakeholder questions during
 > "What-if analysis: Users can explore different scenarios interactively. Pre-configured Logic: Because all the core business logic (pricing, contract terms, ROI formulas) is stored in the knowledge base, the model can be generated and updated with incredible speed and accuracy."
 
 This means when an executive asks "What if we only achieve 50% adoption?" or "What happens if implementation takes 6 months longer?", the champion can:
+
 - Adjust parameters in real-time using the Direct Manipulation Canvas sliders
 - Show immediate impact on ROI and payback period
 - Maintain credibility by providing instant, data-backed answers
@@ -24,6 +25,7 @@ The platform's conversational UI allows champions to refine models naturally dur
 > "Use it to perform actions using natural language, such as: 'Show me last year's sales data' or 'Model a 5% increase in operating costs.'"
 
 During a CFO meeting, the champion can simply type or say:
+
 - "Add a 20% risk buffer to all projections"
 - "Show me the worst-case scenario"
 - "Compare this to our previous ERP implementation"
@@ -39,6 +41,7 @@ Critical for skeptical stakeholders, the platform shows exactly how conclusions 
 > "Agent Reasoning Transparency: For every significant action the agent takes, you can inspect its 'chain of thought' to understand how it reached a conclusion, ensuring transparency and building trust."
 
 When a stakeholder questions "How did you calculate that efficiency gain?", the champion can:
+
 - Click "View Reasoning" to show the step-by-step logic
 - Display the data sources and benchmarks used
 - Demonstrate that calculations aren't "black box" but fully auditable
@@ -49,12 +52,14 @@ Source: ValueVerse Adaptive Frontend - User Guide & Concepts
 
 The platform adapts to different stakeholder sophistication levels:
 
-> "The Adaptive UI intelligently adapts to your skill level... 
+> "The Adaptive UI intelligently adapts to your skill level...
+>
 > - Guided Workflow (Beginner): A simplified view that guides new users
 > - Hybrid Interface (Intermediate): The default view... balance of all three core components
 > - Power User Interface (Expert): A denser, more information-rich layout"
 
 This allows champions to:
+
 - Show executives the Executive Dashboard with high-level KPIs only
 - Dive into detailed calculations with finance teams using the Power User Interface
 - Walk operational teams through implementation impacts using the Guided Workflow
@@ -68,6 +73,7 @@ The platform provides instant credibility through intelligent benchmarking:
 > "The agent can offer to use industry benchmarks from its own knowledge, reducing the burden on the user to know every detail."
 
 When stakeholders challenge assumptions, the champion can:
+
 - Show that metrics are based on industry standards, not guesswork
 - Reference similar implementations at comparable companies
 - Provide confidence intervals based on historical patterns
@@ -81,6 +87,7 @@ The platform enables real-time collaboration during stakeholder sessions:
 > "As data is provided, the financial model comes to life on the canvas. The process becomes a dynamic, real-time collaboration between the user and the agent, allowing for rapid iteration and refinement."
 
 Champions can:
+
 - Invite stakeholders to provide their own assumptions
 - Immediately incorporate feedback into the model
 - Create stakeholder-specific scenarios (e.g., "The CFO's conservative case")
@@ -93,11 +100,13 @@ Source: ValueVerse Platform Development: Master Orchestration Prompt
 The platform serves different internal stakeholders through persona-specific workflows:
 
 > "Serves three personas:
+>
 > - Analyst (Discovery)
 > - Salesperson (Delivery)
 > - Customer Success Manager (Realization)"
 
 This enables champions to:
+
 - Generate analyst-ready financial models for finance teams
 - Create sales-ready presentations for executive sponsors
 - Produce implementation roadmaps for operations teams
@@ -110,11 +119,13 @@ Source: ValueVerse Platform Development: Master Orchestration Prompt
 The platform automatically generates appropriate narratives for different contexts:
 
 > "Narrative Levels:
+>
 > - Level 1 - Micro (Tooltips): 10-50 words
 > - Level 2 - Contextual (Panels): ~200 words
 > - Level 3 - Document (Export): Unlimited length"
 
 Champions can:
+
 - Provide executive summaries for C-suite (Level 1)
 - Share detailed justifications for procurement teams (Level 2)
 - Generate comprehensive business cases for board approval (Level 3)
@@ -128,6 +139,7 @@ The platform enables champions to distribute insights in familiar formats:
 > "The agent can seamlessly transition from model creation to generating customer-facing documents like presentations or proposals"
 
 Champions can export:
+
 - Executive PowerPoint decks for leadership reviews
 - Detailed Excel models for finance validation
 - PDF reports for compliance documentation
@@ -142,6 +154,7 @@ For managing multiple stakeholder perspectives:
 > "Chloe's Delivery: Live presentation → Scenario locking"
 
 Champions can:
+
 - Lock approved scenarios for reference
 - Compare multiple stakeholder scenarios side-by-side
 - Track how the model evolved through stakeholder input
@@ -156,6 +169,7 @@ The platform documentation provides a concrete example:
 > "I'm Brad, a financial analyst. I need to understand how a potential market downturn will affect our Q4 revenue forecast, while also accounting for our new product launch."
 
 Brad (the champion) can:
+
 1. Start with a baseline model
 2. Add market downturn scenarios during the CFO meeting
 3. Incorporate product launch upside during the CMO discussion

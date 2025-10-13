@@ -117,6 +117,7 @@ frontend/
 ### Installation
 
 1. **Install dependencies**:
+
 ```bash
 npm install
 # or
@@ -126,12 +127,14 @@ yarn install
 ```
 
 2. **Set up environment variables**:
+
 ```bash
 cp .env.local.example .env.local
 # Edit .env.local with your configuration
 ```
 
 3. **Run the development server**:
+
 ```bash
 npm run dev
 # or
@@ -141,7 +144,7 @@ yarn dev
 ```
 
 4. **Open your browser**:
-Navigate to [http://localhost:3000](http://localhost:3000)
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Development
 
@@ -203,7 +206,7 @@ The core of the ValueVerse UI is the **Unified Workspace**, which implements a d
     <ThoughtStream />
     <InputField />
   </LeftBrain>
-  
+
   <RightBrain>
     {/* Interactive Canvas */}
     <AdaptiveCanvas>
@@ -222,23 +225,23 @@ The core of the ValueVerse UI is the **Unified Workspace**, which implements a d
 
 ```typescript
 // Example: Workspace store
-import { create } from 'zustand'
+import { create } from "zustand";
 
 interface WorkspaceState {
   leftBrain: {
-    messages: Message[]
-    thinking: boolean
-  }
+    messages: Message[];
+    thinking: boolean;
+  };
   rightBrain: {
-    components: Component[]
-    activeTemplate: ValueTemplate
-  }
+    components: Component[];
+    activeTemplate: ValueTemplate;
+  };
   // Actions
-  addMessage: (message: Message) => void
-  updateCanvas: (components: Component[]) => void
+  addMessage: (message: Message) => void;
+  updateCanvas: (components: Component[]) => void;
 }
 
-export const useWorkspace = create<WorkspaceState>(/* ... */)
+export const useWorkspace = create<WorkspaceState>(/* ... */);
 ```
 
 ### Adaptive UI Levels
@@ -264,14 +267,14 @@ WebSocket connection ensures < 100ms updates:
 
 ```typescript
 // WebSocket hook
-const { sendMessage, subscribe } = useWebSocket()
+const { sendMessage, subscribe } = useWebSocket();
 
 // Subscribe to value graph updates
 useEffect(() => {
-  return subscribe('value_graph_update', (data) => {
-    updateValueGraph(data)
-  })
-}, [])
+  return subscribe("value_graph_update", (data) => {
+    updateValueGraph(data);
+  });
+}, []);
 ```
 
 ## Styling
@@ -281,14 +284,14 @@ useEffect(() => {
 We use Tailwind CSS for utility-first styling and shadcn/ui for component primitives:
 
 ```tsx
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 <Card className="p-6">
   <Button variant="primary" size="lg">
     Build Value Model
   </Button>
-</Card>
+</Card>;
 ```
 
 ### Theme Configuration
@@ -300,12 +303,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: { /* ... */ },
-        secondary: { /* ... */ },
+        primary: {
+          /* ... */
+        },
+        secondary: {
+          /* ... */
+        },
       },
     },
   },
-}
+};
 ```
 
 ## Testing

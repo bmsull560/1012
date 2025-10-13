@@ -1,4 +1,4 @@
-import { ChatBox } from '@/components/chat/ChatBox'
+import { ChatBox } from "@/components/chat/ChatBox";
 
 export default function ChatPage() {
   return (
@@ -8,5 +8,5 @@ export default function ChatPage() {
         <ChatBox />
       </div>
     </div>
-  )
+  );
 }

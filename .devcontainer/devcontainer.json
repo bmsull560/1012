@@ -3,7 +3,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspace",
-  
+
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
@@ -32,43 +32,43 @@
         "ms-python.isort",
         "ms-python.flake8",
         "charliermarsh.ruff",
-        
+
         // JavaScript/TypeScript/React
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "styled-components.vscode-styled-components",
-        
+
         // Database
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
-        
+
         // Docker & Kubernetes
         "ms-azuretools.vscode-docker",
         "ms-kubernetes-tools.vscode-kubernetes-tools",
-        
+
         // Git & Version Control
         "eamodio.gitlens",
         "mhutchie.git-graph",
-        
+
         // Testing
         "hbenl.vscode-test-explorer",
         "littlefoxteam.vscode-python-test-adapter",
         "ms-playwright.playwright",
-        
+
         // AI & Code Quality
         "github.copilot",
         "github.copilot-chat",
         "sonarsource.sonarlint-vscode",
-        
+
         // REST API Development
         "humao.rest-client",
         "42crunch.vscode-openapi",
-        
+
         // Markdown & Documentation
         "yzhang.markdown-all-in-one",
         "bierner.markdown-mermaid",
-        
+
         // Utilities
         "editorconfig.editorconfig",
         "christian-kohler.path-intellisense",
@@ -77,7 +77,7 @@
         "usernamehw.errorlens",
         "gruntfuggly.todo-tree"
       ],
-      
+
       "settings": {
         // Python Settings
         "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -94,7 +94,7 @@
             "source.organizeImports": "explicit"
           }
         },
-        
+
         // TypeScript/JavaScript Settings
         "[typescript]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -117,7 +117,7 @@
         "[json]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode"
         },
-        
+
         // Editor Settings
         "editor.formatOnSave": true,
         "editor.rulers": [80, 120],
@@ -127,7 +127,7 @@
         "editor.guides.bracketPairs": true,
         "editor.inlineSuggest.enabled": true,
         "editor.suggestSelection": "first",
-        
+
         // File Settings
         "files.exclude": {
           "**/__pycache__": true,
@@ -142,16 +142,16 @@
           "**/node_modules/**": true,
           "**/.next/**": true
         },
-        
+
         // Terminal Settings
         "terminal.integrated.defaultProfile.linux": "bash",
         "terminal.integrated.fontSize": 14,
-        
+
         // Git Settings
         "git.autofetch": true,
         "git.confirmSync": false,
         "git.enableSmartCommit": true,
-        
+
         // Security & Linting
         "security.workspace.trust.enabled": true,
         "eslint.validate": [
@@ -160,18 +160,15 @@
           "typescript",
           "typescriptreact"
         ],
-        
+
         // Tailwind CSS
         "tailwindCSS.experimental.classRegex": [
           ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
           ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
         ],
-        
+
         // Error Lens
-        "errorLens.enabledDiagnosticLevels": [
-          "error",
-          "warning"
-        ]
+        "errorLens.enabledDiagnosticLevels": ["error", "warning"]
       }
     }
   },
@@ -197,11 +194,10 @@
   },
 
   "postCreateCommand": "bash /workspace/.devcontainer/post-create.sh",
-  
+
   "remoteUser": "node",
-  
+
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,readonly,type=bind,consistency=cached"
   ]
 }
-

@@ -6,110 +6,86 @@
 
 ValueVerse is an enterprise-grade platform that revolutionizes how businesses create, deliver, and prove customer value. By combining Living Value Graphs with Agentic Orchestration and an Adaptive Interface, ValueVerse transforms customer relationships from transactional to transformational.
 
-### Core Innovation
-
-- **Living Value Graphs**: Temporal, multi-dimensional knowledge structures that evolve with every interaction
-- **Agentic Orchestration**: Four specialized AI agents managing the complete value lifecycle
-- **Dual-Brain Interface**: Conversational AI + Interactive Canvas working in perfect synchronization
-- **Progressive Disclosure**: Consumer simplicity hiding enterprise power
-- **Compound Learning**: Every customer success makes the next one smarter
-
 ## Quick Start
 
 ### Prerequisites
 
 - **Docker Desktop** (4GB RAM minimum, 8GB recommended)
 - **Visual Studio Code** with Dev Containers extension
+- **Python 3.11+**
 - **Git**
 
 ### Setup
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd 1012
+1.  **Clone the repository:**
 
-# Open in VS Code
-code .
+    ```bash
+    git clone <repository-url>
+    cd 1012
+    ```
 
-# When prompted, click "Reopen in Container"
-# Or press F1 → "Dev Containers: Reopen in Container"
-```
+2.  **Open in VS Code and use the Dev Container:**
 
-The first build takes 3-5 minutes. Subsequent starts are much faster (10-20 seconds).
+    - Open the project in VS Code (`code .`).
+    - When prompted, click "Reopen in Container" or press F1 and select "Dev Containers: Reopen in Container".
+    - The first build takes 3-5 minutes.
 
-For detailed setup instructions, see [Docker/ValueVerse Dev Container - Quick Start Guide.md](Docker/ValueVerse%20Dev%20Container%20-%20Quick%20Start%20Guide.md)
+3.  **Set up the Python Environment:**
+    The project now uses a virtual environment to manage dependencies.
+
+    ```bash
+    # Create the virtual environment
+    python3 -m venv .venv
+
+    # Activate the virtual environment
+    source .venv/bin/activate
+
+    # Install dependencies
+    pip install -r requirements.txt
+    ```
 
 ## Architecture
 
 ### Technology Stack
 
-**Frontend:**
-- Next.js 14 + React 18 + TypeScript
-- Tailwind CSS + shadcn/ui
-- Zustand + React Query
-- Socket.io for real-time sync
+- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
+- **Backend**: FastAPI, LangGraph, PostgreSQL, Redis
+- **AI Layer**: Together AI, LangChain, OpenAI Embeddings
 
-**Backend:**
-- FastAPI (Python 3.11+)
-- LangGraph for agent orchestration
-- PostgreSQL 15 + TimescaleDB
-- Redis 7 for caching
-- Celery + RabbitMQ for async tasks
-
-**AI Layer:**
-- GPT-4, Claude-3, Gemini-Pro
-- LangChain + CrewAI for agents
-- OpenAI embeddings + Pinecone
-
-### System Components
-
-1. **Value Graph Engine**: Temporal knowledge graph tracking hypothesis → commitment → realization → proof
-2. **Four Specialized Agents**:
-   - Value Architect (Pre-Sales)
-   - Value Committer (Sales)
-   - Value Executor (Delivery)
-   - Value Amplifier (Customer Success)
-3. **Unified Workspace**: Conversational UI + Interactive Canvas
-4. **Integration Layer**: Salesforce, ServiceNow, Gainsight, NetSuite adapters
-
-## Project Structure
+### Project Structure
 
 ```
 /
-├── docs/                           # Design documentation
-│   ├── design_brief.md            # Master design specification
-│   ├── operatingsystem.md         # Technical architecture whitepaper
-│   ├── value_drivers.md           # Value driver mapping system
-│   ├── integrations.md            # System integration requirements
-│   ├── champion_enablement.md     # Internal buy-in strategies
-│   └── vision_overview.md         # Platform vision
-│
-├── Docker/                         # Development container setup
-│   ├── devcontainer.json          # VS Code dev container config
-│   ├── docker-compose.yml         # Service orchestration (TBD)
-│   ├── Dockerfile                 # Container definition (TBD)
-│   ├── env.example                # Environment variable template
-│   └── post-create.sh             # Post-creation setup script
-│
-├── backend/                        # FastAPI backend (TBD)
-├── frontend/                       # Next.js frontend (TBD)
-├── tests/                          # Test suites (TBD)
-└── README.md                       # This file
+├── .github/              # GitHub Actions workflows
+├── docs/                 # Project documentation and guides
+│   └── reports/          # Status reports and summaries
+├── src/                  # All source code
+│   ├── backend/          # FastAPI backend application
+│   └── scripts/          # Agent scripts and other utilities
+├── frontend/             # Next.js frontend application
+├── tests/                # Test suites
+├── .gitignore
+├── docker-compose.yml
+├── requirements.txt      # Python dependencies
+└── README.md             # This file
 ```
 
 ## Development
 
 ### Running the Application
 
+Ensure your virtual environment is activated (`source .venv/bin/activate`).
+
 **Backend (FastAPI):**
+
 ```bash
-cd backend
+cd src/backend
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 # API docs: http://localhost:8000/docs
 ```
 
 **Frontend (Next.js):**
+
 ```bash
 cd frontend
 npm run dev
@@ -118,180 +94,26 @@ npm run dev
 
 ### Code Quality
 
-The project follows enterprise-grade coding standards. See:
-- Global coding rules in memory/knowledge base
-- Security-first development principles
-- 80%+ test coverage requirement
-- Comprehensive error handling
-
-**Python:**
-```bash
-black .              # Format code
-isort .              # Organize imports
-flake8 .             # Lint
-mypy .               # Type check
-pytest               # Run tests
-```
-
-**TypeScript:**
-```bash
-npm run lint         # ESLint
-npm run format       # Prettier
-npm test             # Run tests
-```
-
-## Documentation
-
-- **[Master Design Specification](docs/design_brief.md)**: Complete technical architecture and UX design
-- **[Operating System Whitepaper](docs/operatingsystem.md)**: Deep dive into the Value Realization OS
-- **[Dev Container Guide](Docker/ValueVerse%20Development%20Container.md)**: Comprehensive dev environment docs
-- **[Value Drivers System](docs/value_drivers.md)**: How product-specific value drivers work
-- **[Integrations Guide](docs/integrations.md)**: External system requirements
-- **[Champion Enablement](docs/champion_enablement.md)**: Internal stakeholder buy-in strategies
-
-## Key Features
-
-### 1. Unified Workspace
-- **Left Brain**: Conversational AI with transparent reasoning
-- **Right Brain**: Interactive canvas with direct manipulation
-- **Real-time Sync**: < 100ms bidirectional state updates
-
-### 2. Agentic Intelligence
-- Autonomous research and hypothesis generation
-- Context-aware recommendations with confidence scoring
-- Transparent reasoning chains for trust
-- Continuous learning from every outcome
-
-### 3. Adaptive Interface
-- **Guided Mode**: Beginner-friendly with extensive tooltips
-- **Hybrid Mode**: Balanced view for intermediate users
-- **Power Mode**: Dense, keyboard-driven for experts
-
-### 4. Value Templates
-- Impact Cascade (waterfall visualization)
-- Trinity Dashboard (revenue/cost/risk)
-- Story Arc Canvas (presentation-ready)
-- Scenario Matrix (multi-option comparison)
-- Quantum View (probabilistic outcomes)
-
-## Security
-
-- **Authentication**: OAuth 2.0 + OIDC with MFA
-- **Authorization**: RBAC with fine-grained permissions
-- **Encryption**: TLS 1.3 in transit, AES-256-GCM at rest
-- **Compliance**: SOC2 Type II, ISO 27001, GDPR-ready
-- **Secrets Management**: Environment variables + KMS integration
-
-## Performance Targets
-
-- Agent response: < 500ms
-- Canvas updates: < 100ms
-- Value calculations: < 2s
-- Graph queries: < 50ms
-- 99.9% uptime SLA
-
-## AI-Powered Development 🤖
-
-ValueVerse features an **automated development system** that uses AI to generate code from GitHub issues!
-
-### Quick Start (5 Minutes)
+This project uses `ruff` for Python linting and formatting.
 
 ```bash
-# 1. Get OpenRouter API key (free signup)
-# Visit: https://openrouter.ai → Sign Up → Create Key
-
-# 2. Add to GitHub secrets
-gh secret set OPENROUTER_API_KEY
-
-# 3. Create an issue and label it
-gh issue create --title "Add User API" --body "Create user CRUD endpoints" --label auto-develop
-
-# 4. AI automatically generates code and creates a PR!
+# Run from the root directory
+ruff check --fix src/
+ruff format src/
 ```
 
-**How it works:**
-- Label issue with `auto-develop` or comment `/develop`
-- AI analyzes requirements and generates implementation
-- Generates backend (FastAPI) + frontend (React) + tests
-- Creates PR ready for human review
+## AI-Powered Development
 
-**See:** `QUICK_START_OPENROUTER.md` for detailed setup
+ValueVerse features an automated development system that uses AI to generate code from GitHub issues.
 
-### What AI Generates
+### How it Works
 
-- ✅ FastAPI backend with async endpoints
-- ✅ React/TypeScript frontend components
-- ✅ Comprehensive test suites (80%+ coverage)
-- ✅ API documentation
-- ✅ Type-safe code (Pydantic, TypeScript strict)
+1.  Create an issue and label it with `generate-ui`.
+2.  The "AI UI Generator" workflow is triggered.
+3.  A multi-agent system analyzes the request, plans the architecture, generates the code, and creates a pull request.
 
-### AI Provider Options
-
-| Provider | Cost/Feature | Quality | Setup |
-|----------|--------------|---------|-------|
-| **OpenRouter** ⭐ | $0.05 | Excellent | 5 min |
-| Together.ai | $0.02 | Great | 5 min |
-| Windsurf AI | Varies | Excellent | IDE |
-| Anthropic Direct | $0.37 | Best | 5 min |
-
-**Recommended:** OpenRouter (best value, access to 100+ models)
-
-**Full guide:** `AI_PROVIDERS_GUIDE.md`
-
-## Contributing
-
-This project follows strict quality and security standards:
-
-1. **Security by Design**: All inputs validated, authentication/authorization enforced
-2. **Production-Grade Code**: 80%+ test coverage, comprehensive error handling
-3. **API-First Development**: Well-documented, versioned APIs
-4. **Human-in-the-Loop**: All AI-generated code must be reviewed
-
-**AI Development**: Label issues with `auto-develop` for automated implementation.
-
-See the global coding rules in your IDE's memory system for detailed guidelines.
-
-## Roadmap
-
-### Phase 1: Foundation (Weeks 1-4)
-- ✅ Development environment setup
-- 🔄 Value Graph infrastructure
-- 🔄 Dual-brain workspace
-- ⏳ Base agent configuration
-
-### Phase 2: Intelligence (Weeks 5-8)
-- ⏳ Automated knowledge base generation
-- ⏳ Four-agent orchestration
-- ⏳ Pattern recognition system
-
-### Phase 3: Experience (Weeks 9-12)
-- ⏳ Adaptive UI implementation
-- ⏳ Five value templates
-- ⏳ Persona-specific workflows
-
-### Phase 4: Scale (Weeks 13-16)
-- ⏳ Enterprise integrations
-- ⏳ Multi-tenant architecture
-- ⏳ Production monitoring
-
-### Phase 5: Evolution (Ongoing)
-- ⏳ Industry-specific templates
-- ⏳ Advanced predictive models
-- ⏳ API ecosystem
-
-## Support
-
-For questions or issues:
-
-1. Check documentation in the `docs/` folder
-2. Review the [Dev Container Guide](Docker/ValueVerse%20Development%20Container.md)
-3. Search existing issues
-4. Create a new issue with detailed context
-
-## License
-
-[Add License Information]
+The agent scripts that power this workflow are located in `src/scripts/agents/`.
 
 ---
 
-**Built with ❤️ for the value economy**
+**Built for the value economy**

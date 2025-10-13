@@ -13,17 +13,20 @@ This directory contains the VS Code Dev Container configuration for the ValueVer
 ### Getting Started
 
 1. **Open the project in VS Code**:
+
 ```bash
 code /path/to/1012
 ```
 
 2. **Reopen in Container**:
+
    - Click the notification that appears, OR
    - Press `F1` → "Dev Containers: Reopen in Container"
 
 3. **Wait for the build** (first time: 3-5 minutes)
 
 4. **Verify the setup**:
+
 ```bash
 # Check Python
 python --version  # Should be 3.11+
@@ -38,12 +41,12 @@ psql -h localhost -U user -d valuedb -c "SELECT version();"
 
 ## 📁 Configuration Files
 
-| File | Purpose |
-|------|---------|
-| `devcontainer.json` | VS Code Dev Container configuration |
+| File                 | Purpose                                |
+| -------------------- | -------------------------------------- |
+| `devcontainer.json`  | VS Code Dev Container configuration    |
 | `docker-compose.yml` | Service orchestration (app, db, redis) |
-| `Dockerfile` | Container image definition |
-| `post-create.sh` | Post-creation setup script |
+| `Dockerfile`         | Container image definition             |
+| `post-create.sh`     | Post-creation setup script             |
 
 ## 🏗️ Architecture
 
@@ -58,6 +61,7 @@ The dev container runs three services:
 ### Network Configuration
 
 Services communicate using Docker's internal networking:
+
 - PostgreSQL: `localhost:5432` (forwarded to host)
 - Redis: `localhost:6379` (forwarded to host)
 
@@ -71,6 +75,7 @@ Services communicate using Docker's internal networking:
 ## 🛠️ Development Tools Included
 
 ### Python Tools
+
 - Python 3.11 with pip and venv
 - **Formatters**: black, isort
 - **Linters**: flake8, pylint, ruff
@@ -79,17 +84,20 @@ Services communicate using Docker's internal networking:
 - **Frameworks**: FastAPI, LangChain, SQLAlchemy
 
 ### Node.js Tools
+
 - Node.js 22 with npm, pnpm, yarn
 - **TypeScript**: typescript, ts-node
 - **Linters**: ESLint
 - **Formatters**: Prettier
 
 ### Database Tools
+
 - PostgreSQL client (psql)
 - Redis CLI (redis-cli)
 - Alembic (database migrations)
 
 ### System Utilities
+
 - Git + GitHub CLI
 - Docker CLI (for Docker-in-Docker)
 - vim, nano, jq, htop
@@ -97,6 +105,7 @@ Services communicate using Docker's internal networking:
 ### VS Code Extensions (30+)
 
 Pre-installed extensions include:
+
 - Python, Pylance, Black, isort, Flake8, Ruff
 - ESLint, Prettier, Tailwind CSS IntelliSense
 - SQLTools with PostgreSQL driver
@@ -110,6 +119,7 @@ Pre-installed extensions include:
 ### Adding VS Code Extensions
 
 Edit `devcontainer.json`:
+
 ```json
 "customizations": {
   "vscode": {
@@ -123,6 +133,7 @@ Edit `devcontainer.json`:
 ### Adding System Packages
 
 Edit `Dockerfile`:
+
 ```dockerfile
 RUN apt-get update && apt-get install -y \
     your-package-name \
@@ -132,6 +143,7 @@ RUN apt-get update && apt-get install -y \
 ### Adding Python Packages
 
 Create/edit `requirements.txt` in project root:
+
 ```
 fastapi>=0.104.0
 sqlalchemy>=2.0.0
@@ -142,6 +154,7 @@ Then rebuild the container.
 ### Adding Node.js Packages
 
 Create/edit `package.json` in project root or run:
+
 ```bash
 npm install package-name
 ```
@@ -150,11 +163,12 @@ npm install package-name
 
 ### Container Won't Start
 
-**Issue**: Docker is not running  
+**Issue**: Docker is not running
 **Solution**: Start Docker Desktop and wait for it to fully initialize
 
-**Issue**: Port conflicts  
+**Issue**: Port conflicts
 **Solution**: Check if ports 5432, 6379, 3000, or 8000 are in use:
+
 ```bash
 lsof -i :5432
 lsof -i :6379
@@ -163,16 +177,19 @@ lsof -i :6379
 ### Database Connection Issues
 
 **Check database is running**:
+
 ```bash
 docker ps | grep timescale
 ```
 
 **Restart database**:
+
 ```bash
 docker-compose restart db
 ```
 
 **Reset database**:
+
 ```bash
 docker-compose down -v
 docker-compose up -d
@@ -181,11 +198,13 @@ docker-compose up -d
 ### Extension Not Working
 
 **Reload window**:
+
 ```
 F1 → "Developer: Reload Window"
 ```
 
 **Rebuild container**:
+
 ```
 F1 → "Dev Containers: Rebuild Container"
 ```
@@ -193,10 +212,12 @@ F1 → "Dev Containers: Rebuild Container"
 ### Performance Issues
 
 **Increase Docker resources**:
+
 - Open Docker Desktop → Settings → Resources
 - Increase CPU cores and RAM (recommend 8GB)
 
 **Clear cache**:
+
 ```bash
 docker system prune -a
 ```
@@ -210,6 +231,7 @@ cp .env.example .env
 ```
 
 Key variables:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `REDIS_URL` - Redis connection string
 - `OPENAI_API_KEY` - OpenAI API key (for AI features)
@@ -235,16 +257,19 @@ npm run test:e2e
 ## 🏃 Running the Application
 
 ### Backend (FastAPI)
+
 ```bash
 cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Access at:
+
 - API: http://localhost:8000
 - Docs: http://localhost:8000/docs
 
 ### Frontend (Next.js)
+
 ```bash
 cd frontend
 npm run dev

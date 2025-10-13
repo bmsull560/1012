@@ -9,12 +9,12 @@ The CS team (represented by "CSM Chris") requires specific integrations:
 ```typescript
 // From the Integration Agent specification
 adapters = {
-  crm: new SalesforceAdapter(),        // Access to original deal data
-  delivery: new ServiceNowAdapter(),    // Project status & milestones
-  analytics: new TableauAdapter(),      // Value metrics visualization
-  success: new GainsightAdapter(),      // CS platform for health scores
-  finance: new NetSuiteAdapter()        // Financial actuals
-}
+  crm: new SalesforceAdapter(), // Access to original deal data
+  delivery: new ServiceNowAdapter(), // Project status & milestones
+  analytics: new TableauAdapter(), // Value metrics visualization
+  success: new GainsightAdapter(), // CS platform for health scores
+  finance: new NetSuiteAdapter(), // Financial actuals
+};
 ```
 
 ## 2. Customer Telemetry & Usage Data
@@ -22,9 +22,11 @@ adapters = {
 Source: Design Brief: Core User Functions & Workflows
 
 The "Track Value Realization" function requires:
+
 > "Link Data: Connects the original value model (created by Sales Sam) to live customer data sources or periodic manual uploads."
 
 This means CS teams need:
+
 - Product usage telemetry (API connections to customer instances)
 - Performance metrics (response times, uptime, efficiency gains)
 - Adoption metrics (user logins, feature utilization rates)
@@ -35,9 +37,11 @@ This means CS teams need:
 Source: ValueVerse Platform: The Streamlined Model Building Workflow
 
 The platform maintains continuity from sales to success:
+
 > "The agent uses the pre-configured pricing, contract lengths, and ROI models from the knowledge base to instantly generate the financial projections."
 
 CS teams need access to:
+
 - Original value hypotheses from pre-sales
 - Contractual KPI commitments from sales
 - Baseline metrics captured at contract signing
@@ -48,9 +52,11 @@ CS teams need access to:
 Source: ValueVerse Platform: Centralized Company Profile System
 
 The system tracks value realization through:
+
 > "Value Realization Dashboard, showing projected vs. actual ROI with clear charts and KPIs"
 
 This requires:
+
 - Webhook infrastructure for real-time data ingestion
 - Time-series database for tracking metric evolution
 - Calculation engine for ROI/value computations
@@ -61,9 +67,11 @@ This requires:
 Source: ValueVerse Platform: The Streamlined Model Building Workflow
 
 The agent leverages benchmarks:
+
 > "The agent can offer to use industry benchmarks from its own knowledge, reducing the burden on the user to know every detail."
 
 CS teams need:
+
 - Industry performance databases
 - Peer comparison metrics
 - Best practice libraries
@@ -74,9 +82,11 @@ CS teams need:
 Source: Design Brief: Core User Functions & Workflows
 
 For the "Prepare for QBR" function:
+
 > "The Assistant automatically generates a slide deck in the Workspace, pulling data from the Value Realization Dashboard."
 
 This requires integration with:
+
 - Presentation tools (PowerPoint, Google Slides)
 - Document management (SharePoint, Box)
 - Calendar systems for QBR scheduling
@@ -87,6 +97,7 @@ This requires integration with:
 Source: ValueVerse Platform Development: Master Orchestration Prompt
 
 The platform needs access to:
+
 - Contract management systems (Icertis, Ironclad) for SLA terms
 - Billing systems for revenue recognition
 - CPQ systems for renewal pricing
@@ -99,16 +110,19 @@ Source: Design Brief: Core User Functions & Workflows
 The CS journey requires data from multiple teams:
 
 ### From Sales:
+
 - Deal history and negotiation context
 - Stakeholder mapping and relationships
 - Competition and win/loss factors
 
 ### From Delivery/Implementation:
+
 - Project timelines and milestones
 - Implementation challenges and resolutions
 - Technical debt or customizations
 
 ### From Support:
+
 - Ticket volumes and resolution times
 - Escalation history
 - Product issues impacting value
@@ -118,9 +132,11 @@ The CS journey requires data from multiple teams:
 Source: ValueVerse Platform: Automated Knowledge Base Generation
 
 The platform can automatically gather context:
+
 > "The agent immediately initiates research on [the customer], leveraging its internal tools to find their website, industry, size, and recent news."
 
 For CS teams, this means:
+
 - Web crawling for customer news/updates
 - Social media monitoring for sentiment
 - Financial data APIs for customer health
@@ -131,12 +147,15 @@ For CS teams, this means:
 Source: ValueVerse Adaptive Frontend - User Guide & Concepts
 
 The platform adapts to user expertise:
+
 > "The Adaptive UI intelligently adapts to your skill level...
+>
 > - Guided Workflow (Beginner): A simplified view that guides new users
 > - Hybrid Interface (Intermediate): The default view... balance of all three core components
 > - Power User Interface (Expert): A denser, more information-rich layout"
 
 CS teams need:
+
 - Onboarding programs for the new value-centric workflow
 - Certification paths for value realization expertise
 - Knowledge base with CS-specific templates
@@ -147,6 +166,7 @@ CS teams need:
 Source: Design Brief: Core User Functions & Workflows - Success Metrics
 
 The platform measures success through:
+
 - Time to Value: How quickly CS can demonstrate ROI
 - Adoption Rate: Percentage of CSMs actively using the platform weekly
 - Template Utilization: Reuse of value realization templates
@@ -167,7 +187,7 @@ To make this work, CS teams need:
 Based on the platform architecture, CS teams should:
 
 1. Phase 1: Connect existing Gainsight/success tools
-2. Phase 2: Establish value metric baselines for current accounts  
+2. Phase 2: Establish value metric baselines for current accounts
 3. Phase 3: Train CSMs on value conversation frameworks
 4. Phase 4: Pilot with 5-10 strategic accounts
 5. Phase 5: Roll out to full customer base

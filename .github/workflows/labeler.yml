@@ -22,4 +22,3 @@ frontend:
   - '\bfrontend\b'
   - '\bui\b'
   - '\breact\b'
-

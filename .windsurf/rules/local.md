@@ -29,12 +29,10 @@ Implement rate limiting on sensitive endpoints to protect against brute-force an
 •
 Rely on FastAPI's Security utilities for implementing OAuth2 and other authentication schemes.
 
-
-
 Python
 
-
 # Example: Secure FastAPI Endpoint with Pydantic and Dependency Injection
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
@@ -43,16 +41,12 @@ app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class Item(BaseModel):
-    name: str
-    price: float
+name: str
+price: float
 
 @app.post("/items/")
-async def create_item(item: Item, token: str = Depends(oauth2_scheme)):
-    # The request is automatically validated against the Item model.
-    # The token dependency ensures the user is authenticated.
-    # Authorization logic would go here.
-    return {"item_name": item.name, "item_price": item.price}
-
+async def create_item(item: Item, token: str = Depends(oauth2_scheme)): # The request is automatically validated against the Item model. # The token dependency ensures the user is authenticated. # Authorization logic would go here.
+return {"item_name": item.name, "item_price": item.price}
 
 2. Frontend: TypeScript, React & Next.js
 
@@ -77,41 +71,36 @@ Preventing CSRF: Implement anti-CSRF token patterns for any state-changing opera
 •
 Secure Headers: Configure Next.js to send security-enhancing HTTP headers, such as Content-Security-Policy and X-Content-Type-Options.
 
-
-
 TypeScript
-
 
 // Example: Typed React Component with Data Fetching
 import { useQuery } from 'react-query';
 
 interface User {
-  id: number;
-  name: string;
-  email: string;
+id: number;
+name: string;
+email: string;
 }
 
 const fetchUsers = async (): Promise<User[]> => {
-  const res = await fetch('/api/users');
-  if (!res.ok) {
-    throw new Error('Network response was not ok');
-  }
-  return res.json();
+const res = await fetch('/api/users');
+if (!res.ok) {
+throw new Error('Network response was not ok');
+}
+return res.json();
 };
 
 function UserList() {
-  const { data, error, isLoading } = useQuery<User[], Error>('users', fetchUsers);
+const { data, error, isLoading } = useQuery<User[], Error>('users', fetchUsers);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>An error has occurred: {error.message}</div>;
+if (isLoading) return <div>Loading...</div>;
+if (error) return <div>An error has occurred: {error.message}</div>;
 
-  return (
-    <ul>
-      {data?.map(user => (
-        <li key={user.id}>{user.name}</li>
-      ))}
-    </ul>
-  );
+return (
+<ul>
+{data?.map(user => (
+<li key={user.id}>{user.name}</li>
+))}
+</ul>
+);
 }
-
-

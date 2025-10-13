@@ -41,4 +41,3 @@ echo "  Frontend: cd frontend && npm run dev"
 echo "  Backend:  cd backend && uvicorn main:app --reload"
 echo "  Tests:    pytest"
 echo ""
-

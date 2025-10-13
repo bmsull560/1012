@@ -12,8 +12,8 @@ interface ProductValueMapping {
   product: "Insightify" | "DataSync Pro" | "CloudOptimizer";
   valueDrivers: [
     "Reduce Operational Costs",
-    "Improve Supply Chain Efficiency", 
-    "Accelerate Time to Market"
+    "Improve Supply Chain Efficiency",
+    "Accelerate Time to Market",
   ];
 }
 ```
@@ -31,21 +31,23 @@ The Value Architect Agent performs automated prospect research to understand the
 async function matchValueDrivers(prospect: Company, product: Product) {
   // 1. Research prospect's industry and strategic goals
   const prospectContext = await research(prospect.website);
-  
+
   // 2. Identify their pain points and initiatives
   const painPoints = extractPainPoints(prospectContext);
-  
+
   // 3. Match to product-specific value drivers
-  const relevantDrivers = product.valueDrivers.filter(driver => 
-    driver.addresses(painPoints) && 
-    driver.alignsWith(prospectContext.strategicGoals)
+  const relevantDrivers = product.valueDrivers.filter(
+    (driver) =>
+      driver.addresses(painPoints) &&
+      driver.alignsWith(prospectContext.strategicGoals),
   );
-  
+
   return relevantDrivers;
 }
 ```
 
 Example from the knowledge base:
+
 > "I've done some initial research on Acme Corp. They are in the manufacturing industry and have recently announced plans to expand their production capacity. Based on your Insightify product and their strategic goals, I recommend we focus on the 'Reduce Operational Costs' and 'Improve Supply Chain Efficiency' value drivers."
 
 ## 3. Automated Knowledge Base Generation
@@ -53,6 +55,7 @@ Example from the knowledge base:
 Source: ValueVerse Platform: Automated Knowledge Base Generation
 
 During initial setup, the platform automatically:
+
 - Crawls the company website and marketing materials
 - Extracts and synthesizes value propositions
 - Maps them to specific products
@@ -65,6 +68,7 @@ This creates a foundation of value drivers that are inherently product-specific.
 Source: ValueVerse Platform: Centralized Company Profile System - Value Driver Configuration
 
 The system allows administrators to:
+
 - Define standardized value propositions for consistency
 - Associate value drivers with specific products
 - Configure industry-specific variations
@@ -100,7 +104,8 @@ The agent doesn't just match mechanically; it synthesizes multiple data points:
 3. Historical Patterns (what worked for similar companies)
 4. Strategic Alignment (matching their goals to your capabilities)
 
-The agent then proactively suggests: 
+The agent then proactively suggests:
+
 > "Based on your [specific product] and their [discovered context], I recommend focusing on [specific value drivers]"
 
 ## 6. Progressive Refinement Through Conversation
@@ -117,6 +122,7 @@ The value drivers become increasingly specific through the conversational workfl
 ## 7. Continuous Learning & Pattern Recognition
 
 While not explicitly detailed in the provided knowledge base, the architecture suggests that the Value Graph accumulates patterns over time, learning which value drivers resonate best with specific:
+
 - Industry verticals
 - Company sizes
 - Strategic initiatives
@@ -127,11 +133,13 @@ This makes future recommendations increasingly accurate and specific.
 ## Example in Practice
 
 For a Manufacturing Prospect buying "Insightify":
+
 - Value Drivers: "Reduce Operational Costs", "Improve Supply Chain Efficiency"
 - Specific Metrics: Production capacity, operational budget, supply chain delays
 - ROI Model: Cost savings through predictive maintenance and inventory optimization
 
 For a Financial Services Prospect buying "DataSync Pro":
+
 - Value Drivers: "Regulatory Compliance", "Risk Mitigation", "Data Accuracy"
 - Specific Metrics: Compliance costs, audit findings, data reconciliation time
 - ROI Model: Avoided penalties and reduced manual reconciliation effort

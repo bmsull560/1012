@@ -170,3 +170,6 @@ site/
 *.pid
 *.seed
 *.pid.lock
+
+# Generated output files
+output/

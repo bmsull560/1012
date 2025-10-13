@@ -41,4 +41,3 @@ jobs:
           cluster-name: valueverse-cluster
           kubernetes-manifest: deployment.yml
           image: ${{ steps.build-image.outputs.image }}
-

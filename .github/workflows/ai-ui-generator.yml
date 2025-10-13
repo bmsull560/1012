@@ -44,9 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install together==1.2.0 httpx==0.26.0 \
-            pydantic==2.5.0 python-dotenv==0.20.0
-          pip install PyGithub==2.1.1 gitpython==3.1.41
+pip install -r requirements.txt
 
       - name: Parse Issue Request
         id: parse
@@ -54,7 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
         run: |
-          python scripts/agents/parse_request.py
+          python src/scripts/agents/parse_request.py
 
       - name: Agent 1 - Design Analyzer
         id: design_analyzer
@@ -63,7 +61,7 @@ jobs:
           COMPONENT_NAME: ${{ steps.parse.outputs.component_name }}
         run: |
           echo "🔍 Analyzing design specifications..."
-          python scripts/agents/design_analyzer.py
+          python src/scripts/agents/design_analyzer.py
 
       - name: Post Design Analysis
         uses: actions/github-script@v7
@@ -95,7 +93,7 @@ jobs:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "🏗️ Planning component architecture..."
-          python scripts/agents/architecture_planner.py
+          python src/scripts/agents/architecture_planner.py
 
       - name: Agent 3 - Component Generator
         id: component_generator
@@ -103,7 +101,7 @@ jobs:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "💻 Generating component code..."
-          python scripts/agents/component_generator.py
+          python src/scripts/agents/component_generator.py
 
       - name: Agent 4 - Integration Engineer
         id: integration_engineer
@@ -111,7 +109,7 @@ jobs:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "🔌 Adding API integrations..."
-          python scripts/agents/integration_engineer.py
+          python src/scripts/agents/integration_engineer.py
 
       - name: Agent 5 - Quality Reviewer
         id: quality_reviewer
@@ -119,7 +117,7 @@ jobs:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           echo "✅ Running quality checks..."
-          python scripts/agents/quality_reviewer.py
+          python src/scripts/agents/quality_reviewer.py
 
       - name: Validate TypeScript
         run: |
