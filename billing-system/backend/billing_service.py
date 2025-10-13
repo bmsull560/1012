@@ -28,6 +28,14 @@ from .auth import get_current_organization
 from .events import EventBus
 from .cache import CacheManager
 from .middleware import configure_middleware
+from .metrics import (
+    metrics_endpoint,
+    track_request_metrics,
+    track_usage_event,
+    track_invoice_generated,
+    track_payment,
+    track_event_bus_message
+)
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +203,13 @@ class BillingService:
         # Check usage limits
         await self._check_usage_limits(organization_id, event.metric_name, db)
         
+        # Track metrics
+        track_usage_event(
+            organization=str(organization_id),
+            metric_name=event.metric_name,
+            duration=0.001  # You'd measure actual duration
+        )
+        
         # Publish event for real-time updates
         await event_bus.publish("usage.recorded", {
             "organization_id": str(organization_id),
@@ -202,6 +217,7 @@ class BillingService:
             "quantity": float(event.quantity),
             "timestamp": event.timestamp.isoformat() if event.timestamp else None
         })
+        track_event_bus_message("usage.recorded", "publish")
         
         return usage_event
     
@@ -675,6 +691,7 @@ billing_service = BillingService()
 # ==================== API Endpoints ====================
 
 @app.post("/api/v1/billing/usage")
+@track_request_metrics("POST", "/api/v1/billing/usage")
 async def record_usage_event(
     event: UsageEventCreate,
     organization: Organization = Depends(get_current_organization),
@@ -700,6 +717,7 @@ async def record_usage_event(
     }
 
 @app.get("/api/v1/billing/usage/summary")
+@track_request_metrics("GET", "/api/v1/billing/usage/summary")
 async def get_usage_summary(
     params: UsageSummaryParams = Depends(),
     organization: Organization = Depends(get_current_organization),
@@ -747,6 +765,7 @@ async def get_usage_summary(
     }
 
 @app.post("/api/v1/billing/subscriptions")
+@track_request_metrics("POST", "/api/v1/billing/subscriptions")
 async def create_subscription(
     subscription_data: SubscriptionCreate,
     organization: Organization = Depends(get_current_organization),
@@ -821,6 +840,7 @@ async def create_subscription(
     }
 
 @app.post("/api/v1/billing/invoices/{invoice_id}/pay")
+@track_request_metrics("POST", "/api/v1/billing/invoices/pay")
 async def pay_invoice(
     invoice_id: UUID,
     payment_method_id: UUID,
@@ -853,9 +873,17 @@ async def pay_invoice(
         }
     }
 
+# ==================== Metrics Endpoint ====================
+
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus metrics endpoint"""
+    return await metrics_endpoint()
+
 # ==================== Health Check Endpoints ====================
 
 @app.get("/health")
+@track_request_metrics("GET", "/health")
 async def health_check():
     """Basic health check endpoint"""
     return {
@@ -866,11 +894,13 @@ async def health_check():
     }
 
 @app.get("/health/live")
+@track_request_metrics("GET", "/health/live")
 async def liveness_probe():
     """Kubernetes liveness probe endpoint"""
     return {"status": "alive"}
 
 @app.get("/health/ready")
+@track_request_metrics("GET", "/health/ready")
 async def readiness_probe(
     db: AsyncSession = Depends(get_db)
 ):

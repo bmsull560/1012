@@ -1,0 +1,190 @@
+groups:
+  - name: billing_system_alerts
+    interval: 30s
+    rules:
+      # High-level service alerts
+      - alert: BillingAPIDown
+        expr: up{job="billing-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: billing
+        annotations:
+          summary: "Billing API is down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 2 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.instance }}"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.instance }}"
+
+      # Resource alerts
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{pod=~"billing-.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High CPU usage on billing pod"
+          description: "Pod {{ $labels.pod }} CPU usage is {{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{pod=~"billing-.*"} / container_spec_memory_limit_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High memory usage on billing pod"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value }}%"
+
+      - alert: PodRestartingTooOften
+        expr: rate(kube_pod_container_status_restarts_total{pod=~"billing-.*"}[15m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "Pod restarting frequently"
+          description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+
+      # Database alerts
+      - alert: DatabaseDown
+        expr: up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL instance {{ $labels.instance }} is down"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: postgresql_connections_used / postgresql_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of max connections used on {{ $labels.instance }}"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(postgresql_slow_queries_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High number of slow database queries"
+          description: "{{ $value }} slow queries per second on {{ $labels.instance }}"
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis instance {{ $labels.instance }} is down"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      # Kafka alerts
+      - alert: KafkaDown
+        expr: up{job="kafka"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: messaging
+        annotations:
+          summary: "Kafka broker is down"
+          description: "Kafka broker {{ $labels.instance }} is down"
+
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_lag > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: messaging
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer group {{ $labels.consumer_group }} has lag of {{ $value }} messages"
+
+      # Business metrics alerts
+      - alert: PaymentFailureRateHigh
+        expr: rate(billing_payment_failures_total[5m]) / rate(billing_payment_attempts_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High payment failure rate"
+          description: "Payment failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: InvoiceGenerationFailed
+        expr: increase(billing_invoice_generation_failures_total[1h]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "Multiple invoice generation failures"
+          description: "{{ $value }} invoice generation failures in the last hour"
+
+      - alert: UsageEventIngestionSlow
+        expr: histogram_quantile(0.99, rate(billing_usage_ingestion_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "Slow usage event ingestion"
+          description: "99th percentile ingestion time is {{ $value }}s"
+
+      - alert: SubscriptionChurnRateHigh
+        expr: rate(billing_subscriptions_canceled_total[24h]) / billing_subscriptions_active > 0.02
+        for: 1h
+        labels:
+          severity: info
+          service: billing
+        annotations:
+          summary: "High subscription churn rate"
+          description: "Daily churn rate is {{ $value | humanizePercentage }}"
+
+      # SSL certificate expiry
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
