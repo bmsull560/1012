@@ -122,7 +122,6 @@ export default function WorkspacePage() {
 
   // Hooks
   const { user } = useAuthStore();
-  const { activeProject } = useWorkspaceStore();
   const {
     isConnected,
     isProcessing,
@@ -467,7 +466,7 @@ export default function WorkspacePage() {
         {/* Messages Area */}
         <ScrollArea className="flex-1 bg-white">
           <div className="max-w-4xl mx-auto">
-            {activeConversation?.messages.length === 0 ? (
+            {!activeConversation || activeConversation.messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-96 text-gray-500">
                 <MessageSquare className="h-12 w-12 mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium mb-2">Start a conversation</h3>
