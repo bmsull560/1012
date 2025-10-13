@@ -1,272 +1,122 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { DualBrainLayout } from '@/components/layout/DualBrainLayout'
-import { SimpleValueGraph } from '@/components/graph/SimpleValueGraph'
-import { ChatPanel } from '@/components/chat/ChatPanel'
-import { AgentOrchestrator } from '@/components/agents/AgentOrchestrator'
-import { MetricsDashboard } from '@/components/metrics/MetricsDashboard'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { 
-  Brain, 
-  Network, 
-  BarChart3, 
-  Users,
-  Sparkles,
-  TrendingUp,
-  Target,
-  DollarSign
-} from 'lucide-react'
+import React from 'react'
 
-// Mock data for demonstration
-const mockNodes = [
-  {
-    id: '1',
-    type: 'hypothesis' as const,
-    label: 'Supply Chain Optimization',
-    value: 2300000,
-    confidence: 0.85,
-    status: 'active' as const
-  },
-  {
-    id: '2',
-    type: 'commitment' as const,
-    label: 'Q1 Cost Reduction',
-    value: 750000,
-    confidence: 0.92,
-    status: 'active' as const
-  },
-  {
-    id: '3',
-    type: 'realization' as const,
-    label: 'Warehouse Automation',
-    value: 450000,
-    confidence: 0.78,
-    status: 'achieved' as const
-  },
-  {
-    id: '4',
-    type: 'amplification' as const,
-    label: 'EMEA Expansion',
-    value: 4100000,
-    confidence: 0.65,
-    status: 'pending' as const
-  },
-  {
-    id: '5',
-    type: 'hypothesis' as const,
-    label: 'Customer Onboarding',
-    value: 1200000,
-    confidence: 0.88,
-    status: 'active' as const
-  },
-  {
-    id: '6',
-    type: 'commitment' as const,
-    label: 'Time-to-Value Reduction',
-    value: 500000,
-    confidence: 0.75,
-    status: 'at-risk' as const
-  }
-]
-
-const mockEdges = [
-  { source: '1', target: '2', type: 'causal' as const, strength: 0.9 },
-  { source: '2', target: '3', type: 'dependency' as const, strength: 0.8 },
-  { source: '3', target: '4', type: 'attribution' as const, strength: 0.7 },
-  { source: '5', target: '6', type: 'causal' as const, strength: 0.85 },
-  { source: '1', target: '5', type: 'dependency' as const, strength: 0.6 }
-]
-
-export default function WorkspacePage() {
-  const [selectedNode, setSelectedNode] = useState<any>(null)
-  const [activeView, setActiveView] = useState<'graph' | 'metrics' | 'agents'>('graph')
-  const [userLevel, setUserLevel] = useState<'beginner' | 'intermediate' | 'expert'>('intermediate')
-
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Update mock data here for real-time effect
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const leftPanel = (
-    <div className="h-full flex flex-col">
-      {/* Agent Status Bar */}
-      <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-medium">Four-Agent Symphony</span>
-          </div>
-          <div className="flex gap-1">
-            <Badge variant="outline" className="text-xs">
-              <div className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse" />
-              Architect
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              <div className="w-2 h-2 rounded-full bg-blue-500 mr-1 animate-pulse" />
-              Committer
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              <div className="w-2 h-2 rounded-full bg-amber-500 mr-1" />
-              Executor
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              <div className="w-2 h-2 rounded-full bg-purple-500 mr-1" />
-              Amplifier
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      {/* Chat Panel */}
-      <div className="flex-1 overflow-hidden">
-        <ChatPanel 
-          onNodeSelect={setSelectedNode}
-          selectedNode={selectedNode}
-          userLevel={userLevel}
-        />
-      </div>
-    </div>
-  )
-
-  const rightPanel = (
-    <div className="h-full flex flex-col">
-      {/* View Tabs */}
-      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-800">
-        <Tabs value={activeView} onValueChange={(v: any) => setActiveView(v)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="graph" className="flex items-center gap-2">
-              <Network className="w-4 h-4" />
-              Value Graph
-            </TabsTrigger>
-            <TabsTrigger value="metrics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Metrics
-            </TabsTrigger>
-            <TabsTrigger value="agents" className="flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              Agents
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Content Area */}
-      <div className="flex-1 overflow-hidden">
-        {activeView === 'graph' && (
-          <SimpleValueGraph
-            nodes={mockNodes}
-            edges={mockEdges}
-            onNodeClick={setSelectedNode}
-            onNodeHover={(node) => {
-              // Handle hover
-            }}
-          />
-        )}
-        
-        {activeView === 'metrics' && (
-          <MetricsDashboard 
-            nodes={mockNodes}
-            userLevel={userLevel}
-          />
-        )}
-        
-        {activeView === 'agents' && (
-          <AgentOrchestrator 
-            onAgentAction={(action) => {
-              console.log('Agent action:', action)
-            }}
-          />
-        )}
-      </div>
-
-      {/* Quick Stats Bar */}
-      <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-        <div className="grid grid-cols-4 gap-4">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-blue-600" />
-            <div>
-              <p className="text-xs text-slate-500">Pipeline</p>
-              <p className="text-sm font-bold">$12.4M</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-green-600" />
-            <div>
-              <p className="text-xs text-slate-500">Realized</p>
-              <p className="text-sm font-bold">$2.7M</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-amber-600" />
-            <div>
-              <p className="text-xs text-slate-500">Velocity</p>
-              <p className="text-sm font-bold">+23%</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-purple-600" />
-            <div>
-              <p className="text-xs text-slate-500">Accounts</p>
-              <p className="text-sm font-bold">47</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
+export default function SimpleWorkspacePage() {
   return (
-    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
-      {/* Top Navigation */}
-      <div className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            ValueVerse
-          </h1>
-          <Badge variant="secondary">Enterprise</Badge>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-500">Experience Level:</span>
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant={userLevel === 'beginner' ? 'default' : 'outline'}
-              onClick={() => setUserLevel('beginner')}
-            >
-              Beginner
-            </Button>
-            <Button
-              size="sm"
-              variant={userLevel === 'intermediate' ? 'default' : 'outline'}
-              onClick={() => setUserLevel('intermediate')}
-            >
-              Intermediate
-            </Button>
-            <Button
-              size="sm"
-              variant={userLevel === 'expert' ? 'default' : 'outline'}
-              onClick={() => setUserLevel('expert')}
-            >
-              Expert
-            </Button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-blue-600">ValueVerse Enterprise</h1>
+          <div className="flex gap-2">
+            <button className="px-3 py-1 bg-blue-600 text-white rounded">Beginner</button>
+            <button className="px-3 py-1 border rounded">Intermediate</button>
+            <button className="px-3 py-1 border rounded">Expert</button>
           </div>
         </div>
       </div>
 
-      {/* Dual Brain Layout */}
-      <div className="flex-1 overflow-hidden">
-        <DualBrainLayout
-          leftPanel={leftPanel}
-          rightPanel={rightPanel}
-        />
+      {/* Main Content - Split View */}
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* Left Panel - AI Chat */}
+        <div className="w-1/2 bg-white border-r">
+          <div className="p-4 bg-blue-50 border-b">
+            <h2 className="font-semibold">AI Assistant</h2>
+            <p className="text-sm text-gray-600">Conversational Intelligence</p>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="bg-gray-100 rounded-lg p-3">
+              <p className="text-sm">Welcome to ValueVerse! I'm orchestrating four specialized agents to help you realize customer value.</p>
+            </div>
+            <div className="bg-blue-100 rounded-lg p-3">
+              <p className="text-sm">I've analyzed your value pipeline and identified 3 high-impact opportunities totaling $4.2M.</p>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 w-1/2 p-4 border-t bg-white">
+            <input 
+              type="text" 
+              placeholder="Ask me about customer value..."
+              className="w-full p-2 border rounded"
+            />
+          </div>
+        </div>
+
+        {/* Right Panel - Value Canvas */}
+        <div className="w-1/2 bg-gray-50">
+          <div className="p-4 bg-purple-50 border-b">
+            <h2 className="font-semibold">Value Canvas</h2>
+            <p className="text-sm text-gray-600">Living Value Graph</p>
+          </div>
+          
+          {/* Simple Graph Visualization */}
+          <div className="relative h-full p-8">
+            {/* Value Nodes */}
+            <div className="absolute top-20 left-20 bg-blue-500 text-white rounded-full p-4 shadow-lg">
+              <div className="text-center">
+                <div className="font-bold">$2.3M</div>
+                <div className="text-xs">Supply Chain</div>
+              </div>
+            </div>
+            
+            <div className="absolute top-20 right-20 bg-green-500 text-white rounded-full p-4 shadow-lg">
+              <div className="text-center">
+                <div className="font-bold">$0.75M</div>
+                <div className="text-xs">Q1 Cost</div>
+              </div>
+            </div>
+            
+            <div className="absolute bottom-40 left-20 bg-amber-500 text-white rounded-full p-4 shadow-lg">
+              <div className="text-center">
+                <div className="font-bold">$1.2M</div>
+                <div className="text-xs">Onboarding</div>
+              </div>
+            </div>
+            
+            <div className="absolute bottom-40 right-20 bg-purple-500 text-white rounded-full p-4 shadow-lg">
+              <div className="text-center">
+                <div className="font-bold">$4.1M</div>
+                <div className="text-xs">EMEA</div>
+              </div>
+            </div>
+
+            {/* Center text */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+              <h3 className="text-xl font-semibold text-gray-700">Living Value Graph</h3>
+              <p className="text-gray-500">$12.4M Total Pipeline</p>
+            </div>
+
+            {/* Legend */}
+            <div className="absolute bottom-4 left-4 bg-white rounded p-3 shadow">
+              <div className="text-xs space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Hypothesis</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>Commitment</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <span>Realization</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span>Amplification</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Status Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-6 py-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-green-600">● 4 Agents Active</span>
+          <span>Pipeline: $12.4M | Realized: $2.7M | At Risk: $0.5M</span>
+        </div>
       </div>
     </div>
   )
