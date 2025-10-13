@@ -51,7 +51,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
-import { useAgent } from "@/hooks/useAgent";
+import { useAgents } from "@/hooks/useAgents";
 import { VALUE_DRIVERS, calculateTotalValue, generateScenarios, calculateNPV, calculatePayback, INDUSTRY_BENCHMARKS, calculateAdoptionFactor } from "@/utils/valueDrivers";
 import { ValueModelReport } from "@/components/value-model/ValueModelReport";
 import { WhatIfSliders } from "@/components/value-model/WhatIfSliders";
