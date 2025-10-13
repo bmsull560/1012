@@ -2,23 +2,19 @@ import * as React from "react"
 
 const Tabs = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { value?: string; onValueChange?: (value: string) => void }
->(({ className, children, value, onValueChange, ...props }, ref) => {
-  const [selectedValue, setSelectedValue] = React.useState(value || '')
+  React.HTMLAttributes<HTMLDivElement> & { value?: string; onValueChange?: (value: string) => void; defaultValue?: string }
+>(({ className, children, value, onValueChange, defaultValue, ...props }, ref) => {
+  const [selectedValue, setSelectedValue] = React.useState(value || defaultValue || '')
   
-  const handleValueChange = (newValue: string) => {
-    setSelectedValue(newValue)
-    onValueChange?.(newValue)
-  }
+  React.useEffect(() => {
+    if (value !== undefined) {
+      setSelectedValue(value)
+    }
+  }, [value])
   
   return (
-    <div ref={ref} className={className} {...props}>
-      {React.Children.map(children, child => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child as any, { selectedValue, onValueChange: handleValueChange })
-        }
-        return child
-      })}
+    <div ref={ref} className={className} data-state={selectedValue} {...props}>
+      {children}
     </div>
   )
 })

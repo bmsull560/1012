@@ -14,7 +14,7 @@ import {
   Clock,
   DollarSign
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 
 interface ValueNode {
   id: string

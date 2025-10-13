@@ -13,7 +13,7 @@ import {
   ChevronDown,
   Loader2
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -239,7 +239,7 @@ export function ChatPanel({ onNodeSelect, selectedNode, userLevel }: ChatPanelPr
                   )}
 
                   {/* Timestamp */}
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-400" suppressHydrationWarning>
                     {message.timestamp.toLocaleTimeString()}
                   </span>
                 </div>

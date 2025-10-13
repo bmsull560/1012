@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Brain, 
   Target, 
-  Handshake, 
+  Users, 
   Zap, 
   TrendingUp,
   Play,
@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 
 interface Agent {
   id: string
@@ -84,7 +84,7 @@ export function AgentOrchestrator({ onAgentAction }: AgentOrchestratorProps) {
         successRate: 88,
         avgResponseTime: 3.1
       },
-      icon: Handshake,
+      icon: Users,
       color: 'green'
     },
     {
