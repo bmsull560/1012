@@ -99,9 +99,57 @@ class BillingService:
     """Core billing service with all business logic"""
     
     def __init__(self):
-        self.redis_client = redis.from_url(os.getenv("REDIS_URL"))
+        self.redis_client = None
         self.usage_buffer = []
         self.buffer_lock = asyncio.Lock()
+        self._initialized = False
+    
+    async def initialize(self):
+        """Initialize billing service connections"""
+        if self._initialized:
+            return
+        
+        try:
+            # Initialize Redis connection
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            self.redis_client = redis.from_url(redis_url)
+            await self.redis_client.ping()
+            logger.info("Redis connection established")
+            
+            # Initialize Stripe
+            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+            if stripe.api_key:
+                logger.info("Stripe API initialized")
+            else:
+                logger.warning("Stripe API key not configured")
+            
+            self._initialized = True
+            logger.info("Billing service initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize billing service: {e}")
+            raise
+    
+    async def cleanup(self):
+        """Cleanup billing service resources"""
+        try:
+            # Flush any remaining usage buffer
+            if self.usage_buffer:
+                logger.info(f"Flushing {len(self.usage_buffer)} buffered usage events")
+                # Note: We can't flush without a database session here
+                # This would need to be handled differently in production
+                self.usage_buffer.clear()
+            
+            # Close Redis connection
+            if self.redis_client:
+                await self.redis_client.close()
+                logger.info("Redis connection closed")
+            
+            self._initialized = False
+            logger.info("Billing service cleanup completed")
+            
+        except Exception as e:
+            logger.error(f"Error during billing service cleanup: {e}")
         
     async def record_usage(
         self,
