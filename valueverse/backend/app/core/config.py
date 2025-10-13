@@ -1,9 +1,10 @@
 """Application configuration using Pydantic Settings"""
 
+import os
 from typing import List, Optional
 from pydantic_settings import BaseSettings
 from pydantic import Field, validator
-import secrets
+import secrets as secrets_lib
 
 
 class Settings(BaseSettings):
@@ -18,12 +19,19 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "ValueVerse"
     
+    # Environment
+    ENVIRONMENT: str = Field(default="development", env="ENVIRONMENT")
+    
     # Security
-    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30  # 30 days
+    SECRET_KEY: str = Field(default_factory=lambda: secrets_lib.token_urlsafe(32))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes for production security
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 days
     ALGORITHM: str = "HS256"
     BCRYPT_ROUNDS: int = 12
+    
+    # Rate Limiting
+    RATE_LIMIT_PER_MINUTE: int = 60
+    RATE_LIMIT_PER_HOUR: int = 1000
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = Field(
@@ -53,9 +61,10 @@ class Settings(BaseSettings):
     PINECONE_INDEX_NAME: str = Field(default="valueverse", env="PINECONE_INDEX_NAME")
     
     # WebSocket
-    WEBSOCKET_SECRET: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    WEBSOCKET_SECRET: str = Field(default_factory=lambda: secrets_lib.token_urlsafe(32))
     WEBSOCKET_PING_INTERVAL: int = 25
     WEBSOCKET_PING_TIMEOUT: int = 5
+    WEBSOCKET_MAX_CONNECTIONS: int = 10000
     
     # Celery
     CELERY_BROKER_URL: str = Field(
@@ -83,4 +92,33 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-settings = Settings()
+def get_settings() -> Settings:
+    """Get settings instance with secrets management integration"""
+    settings = Settings()
+    
+    # In production, override with secrets from AWS Secrets Manager
+    if settings.ENVIRONMENT == "production":
+        try:
+            from .secrets import secrets_manager
+            
+            # Get JWT configuration
+            jwt_config = secrets_manager.get_jwt_config()
+            settings.SECRET_KEY = jwt_config.get('secret_key', settings.SECRET_KEY)
+            settings.ACCESS_TOKEN_EXPIRE_MINUTES = jwt_config.get('access_token_expire_minutes', 15)
+            
+            # Get database URL
+            settings.DATABASE_URL = secrets_manager.get_database_url()
+            
+            # Get API keys
+            api_keys = secrets_manager.get_secret("valueverse/prod/api-keys")
+            settings.OPENAI_API_KEY = api_keys.get('openai_api_key')
+            settings.ANTHROPIC_API_KEY = api_keys.get('anthropic_api_key')
+            settings.TOGETHER_API_KEY = api_keys.get('together_api_key')
+            
+        except Exception as e:
+            print(f"Warning: Could not load production secrets: {e}")
+    
+    return settings
+
+
+settings = get_settings()
