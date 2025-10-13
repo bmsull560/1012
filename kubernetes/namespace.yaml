@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: valueverse-prod
+  labels:
+    name: valueverse-prod
+    environment: production
+    team: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: valueverse-monitoring
+  labels:
+    name: valueverse-monitoring
+    environment: production
+    team: sre
