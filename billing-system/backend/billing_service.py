@@ -2,6 +2,7 @@
 ValueVerse Billing Service - Core billing engine implementation
 """
 
+import os
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
@@ -9,7 +10,7 @@ from uuid import UUID
 import asyncio
 import logging
 
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Query
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import select, func, and_, or_
