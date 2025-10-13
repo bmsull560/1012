@@ -1,0 +1,118 @@
+# ============================================================================
+# Docker Compose Override for Development Environment
+# Usage: docker compose -f docker-compose.complete.yml -f docker-compose.dev.yml up
+# ============================================================================
+
+services:
+  # Frontend with hot reload
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: 1
+    command: npm run dev
+
+  # Microservices with hot reload
+  value-architect:
+    volumes:
+      - ./services/value-architect:/app
+    environment:
+      RELOAD: "true"
+      LOG_LEVEL: debug
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  value-committer:
+    volumes:
+      - ./services/value-committer:/app
+    environment:
+      RELOAD: "true"
+      LOG_LEVEL: debug
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+  value-executor:
+    volumes:
+      - ./services/value-executor:/app
+    environment:
+      RELOAD: "true"
+      LOG_LEVEL: debug
+    command: uvicorn main:app --host 0.0.0.0 --port 8003 --reload
+
+  value-amplifier:
+    volumes:
+      - ./services/value-amplifier:/app
+    environment:
+      RELOAD: "true"
+      LOG_LEVEL: debug
+    command: uvicorn main:app --host 0.0.0.0 --port 8004 --reload
+
+  calculation-engine:
+    volumes:
+      - ./services/calculation-engine:/app
+    environment:
+      RELOAD: "true"
+      LOG_LEVEL: debug
+    command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
+
+  notification-service:
+    volumes:
+      - ./services/notification-service:/app
+    environment:
+      RELOAD: "true"
+      LOG_LEVEL: debug
+    command: uvicorn main:app --host 0.0.0.0 --port 8006 --reload
+
+  # Database with exposed port for development tools
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: valueverse_dev
+
+  # Redis with exposed port
+  redis:
+    ports:
+      - "6379:6379"
+
+  # RabbitMQ with management console
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # Additional development tools
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - valueverse-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@valueverse.ai
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - valueverse-network
+    depends_on:
+      - postgres
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - valueverse-network
+    depends_on:
+      - redis
