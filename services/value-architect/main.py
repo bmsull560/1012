@@ -1,6 +1,7 @@
 """
 Value Architect Microservice
 Handles value model design and hypothesis generation
+Powered by Together.ai for intelligent value modeling
 """
 
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
@@ -15,6 +16,11 @@ from datetime import datetime
 import uuid
 import redis.asyncio as redis
 from enum import Enum
+from dotenv import load_dotenv
+from together_client import TogetherPipesClient
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(
     title="Value Architect Service",
@@ -66,32 +72,40 @@ class ValueModelResponse(BaseModel):
     updated_at: datetime
 
 class ArchitectAgent:
-    """Core Value Architect Agent logic"""
+    """Core Value Architect Agent logic powered by Together.ai"""
     
-    async def analyze_company(self, company_name: str, industry: str) -> Dict[str, Any]:
-        """Analyze company and industry for value opportunities"""
-        # Simulate AI analysis (would integrate with LLM)
+    def __init__(self):
+        self.ai_client = TogetherPipesClient()
+    
+    async def analyze_company(self, company_name: str, industry: str, context: str = "") -> Dict[str, Any]:
+        """Analyze company and industry for value opportunities using AI"""
+        # Use Together.ai to generate comprehensive value model
+        value_model = await self.ai_client.generate_value_model(company_name, industry, context)
+        
+        # Extract company analysis from the AI response
         return {
             "company_profile": {
                 "name": company_name,
                 "industry": industry,
-                "key_challenges": [
-                    "Manual processes limiting scale",
-                    "Customer retention below industry average",
-                    "Long sales cycles"
-                ],
-                "opportunities": [
-                    "Process automation potential: 40%",
-                    "Customer experience improvement: 25%",
-                    "Sales velocity increase: 30%"
-                ]
+                "analysis": value_model.get('company_analysis', {}),
+                "key_challenges": value_model.get('company_analysis', {}).get('challenges', []),
+                "opportunities": value_model.get('company_analysis', {}).get('opportunities', [])
             },
-            "confidence": 0.85
+            "confidence": value_model.get('roi_analysis', {}).get('confidence_score', 0.75),
+            "full_model": value_model
         }
     
     async def identify_value_drivers(self, company_analysis: Dict) -> List[Dict[str, Any]]:
-        """Identify relevant value drivers based on analysis"""
-        # Industry-specific value driver mapping
+        """Extract value drivers from AI-generated model"""
+        # Get value drivers from the full AI model
+        full_model = company_analysis.get('full_model', {})
+        ai_drivers = full_model.get('value_drivers', [])
+        
+        # If AI provided drivers, use them
+        if ai_drivers:
+            return ai_drivers
+        
+        # Fallback drivers if AI didn't provide any
         drivers = [
             {
                 "id": "automation",
