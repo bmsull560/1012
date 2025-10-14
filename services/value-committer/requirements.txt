@@ -4,5 +4,5 @@ pydantic==2.5.0
 redis==5.0.1
 httpx==0.25.1
 asyncpg==0.29.0
-python-multipart==0.0.6
+python-multipart==0.0.18
 aiokafka==0.10.0

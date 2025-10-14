@@ -4,7 +4,7 @@
 uvicorn[standard]==0.24.0
 uvloop==0.19.0
 httptools==0.6.1
-gunicorn==21.2.0
+gunicorn==22.0.0
 
 # Kafka
 aiokafka==0.10.0
@@ -20,7 +20,7 @@ sqlalchemy[asyncio]==2.0.23
 psycopg[binary,pool]==3.1.13
 
 # Serialization (faster than json)
-orjson==3.9.10
+orjson==3.9.15
 msgpack==1.0.7
 
 # Monitoring
@@ -41,4 +41,4 @@ locust==2.17.0
 # Additional Performance Tools
 cachetools==5.3.2
 aiocache[redis]==0.12.2
-python-multipart==0.0.6
+python-multipart==0.0.18
