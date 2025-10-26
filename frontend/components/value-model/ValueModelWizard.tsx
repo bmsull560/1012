@@ -270,7 +270,7 @@ export default function ValueModelWizard({
                 <Label htmlFor="industry">Industry *</Label>
                 <Select
                   value={model.industry}
-                  onValueChange={(value) => setModel({ ...model, industry: value })}
+                  onValueChange={(value: string) => setModel({ ...model, industry: value })}
                 >
                   <SelectTrigger className={errors.industry ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select industry" />
@@ -299,7 +299,7 @@ export default function ValueModelWizard({
                   max={60}
                   step={1}
                   value={[model.timeline]}
-                  onValueChange={(value) => setModel({ ...model, timeline: value[0] })}
+                  onValueChange={(value: string) => setModel({ ...model, timeline: value[0] })}
                   className="flex-1"
                 />
                 <span className="w-16 text-right font-medium">
@@ -358,7 +358,7 @@ export default function ValueModelWizard({
                         <Label>Category</Label>
                         <Select
                           value={driver.category}
-                          onValueChange={(value) =>
+                          onValueChange={(value: string) =>
                             updateDriver(driver.id, { category: value })
                           }
                         >
@@ -379,7 +379,7 @@ export default function ValueModelWizard({
                         <Label>Unit</Label>
                         <Select
                           value={driver.unit}
-                          onValueChange={(value) =>
+                          onValueChange={(value: string) =>
                             updateDriver(driver.id, { unit: value })
                           }
                         >
@@ -451,7 +451,7 @@ export default function ValueModelWizard({
                         max={10}
                         step={1}
                         value={[driver.weight]}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           updateDriver(driver.id, { weight: value[0] })
                         }
                       />
@@ -510,7 +510,7 @@ export default function ValueModelWizard({
                     max={100}
                     step={5}
                     value={[model.confidence]}
-                    onValueChange={(value) =>
+                    onValueChange={(value: string) =>
                       setModel({ ...model, confidence: value[0] })
                     }
                   />
