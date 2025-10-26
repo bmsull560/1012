@@ -72,11 +72,28 @@ class Stage(str, Enum):
     COMPLETE = "complete"
 
 class ValueModelRequest(BaseModel):
-    company_name: str
-    industry: str
-    company_size: str = Field(default="mid-market")
-    target_metrics: List[str] = Field(default_factory=list)
-    context: Optional[Dict[str, Any]] = None
+    company_name: str = Field(..., min_length=1, max_length=200)
+    industry: str = Field(..., min_length=1, max_length=100)
+    company_size: str = Field(default="mid-market", min_length=1, max_length=50)
+    target_metrics: List[str] = Field(default_factory=list, max_items=20)
+    context: Optional[Dict[str, Any]] = Field(None, max_length=10000)
+    
+    @validator('company_name')
+    def validate_company_name(cls, v):
+        """Validate company name format"""
+        return InputValidator.validate_company_name(v)
+    
+    @validator('industry')
+    def validate_industry(cls, v):
+        """Validate industry format"""
+        return InputValidator.validate_industry(v)
+    
+    @validator('context')
+    def validate_context(cls, v):
+        """Validate context structure and size"""
+        if v:
+            return InputValidator.validate_dict_size(v, max_size=10000)
+        return v
 
 class ValueModelResponse(BaseModel):
     id: str
