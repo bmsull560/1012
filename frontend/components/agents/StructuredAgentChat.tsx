@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { sanitizeMarkdownToHTML } from "@/lib/sanitize";
 import {
   Card,
   CardContent,
@@ -70,6 +71,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AgentArtifacts } from "./AgentArtifacts";
+
+// Safe HTML component that sanitizes content before rendering
+const SafeHTML: React.FC<{ content: string }> = ({ content }) => {
+  const sanitizedContent = sanitizeMarkdownToHTML(content);
+  return <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />;
+};
 
 // Message Types
 type MessageRole = "user" | "assistant" | "system" | "artifact";
@@ -562,7 +569,7 @@ function MessageBubble({ message }: { message: Message }) {
         
         <div className="prose prose-sm max-w-none">
           <div className="bg-slate-50 rounded-lg px-4 py-3 text-slate-900">
-            <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>').replace(/•/g, '&bull;') }} />
+            <SafeHTML content={message.content} />
           </div>
         </div>
         
