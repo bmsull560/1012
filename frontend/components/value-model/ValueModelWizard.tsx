@@ -451,7 +451,7 @@ export default function ValueModelWizard({
                         max={10}
                         step={1}
                         value={[driver.weight]}
-                        onValueChange={(value: string) =>
+                        onValueChange={(value: number[]) =>
                           updateDriver(driver.id, { weight: value[0] })
                         }
                       />
