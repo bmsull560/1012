@@ -14,6 +14,9 @@ psycopg2-binary==2.9.9
 redis==5.0.1
 hiredis==2.3.2
 
+# Cloud Integrations
+boto3>=1.28.0
+
 # Kafka
 aiokafka==0.10.0
 confluent-kafka==2.3.0
