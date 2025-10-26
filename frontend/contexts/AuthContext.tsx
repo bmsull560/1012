@@ -42,20 +42,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check for existing session
+    // Tokens are now in HttpOnly cookies, so we just try to get current user
     const checkUser = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-          const currentUser = await authAPI.getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-            // Connect to WebSocket for agent communication
-            agentAPI.connect(currentUser.id, currentUser.tenant_id);
-          }
+        const currentUser = await authAPI.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          // Connect to WebSocket for agent communication
+          agentAPI.connect(currentUser.id, currentUser.tenant_id);
         }
       } catch (error) {
         console.error('Error checking auth:', error);
-        localStorage.removeItem('access_token');
+        // No need to clear localStorage - tokens are in HttpOnly cookies
       } finally {
         setLoading(false);
       }

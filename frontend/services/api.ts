@@ -5,63 +5,49 @@ import { ValueModelData } from '@/components/value-model/ValueModelReport';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
-// Token management
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
+// Token management - Now handled via HttpOnly cookies
+// Tokens are no longer stored in localStorage for security
 
-// Set tokens from auth
-export function setTokens(access: string, refresh?: string) {
-  accessToken = access;
-  if (refresh) refreshToken = refresh;
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('access_token', access);
-    if (refresh) localStorage.setItem('refresh_token', refresh);
-  }
-}
-
-// Get stored tokens
-export function getTokens() {
-  if (!accessToken && typeof window !== 'undefined') {
-    accessToken = localStorage.getItem('access_token');
-    refreshToken = localStorage.getItem('refresh_token');
-  }
-  return { accessToken, refreshToken };
-}
-
-// Clear tokens (logout)
-export function clearTokens() {
-  accessToken = null;
-  refreshToken = null;
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  }
-}
+// Note: Tokens are now managed server-side via HttpOnly cookies
+// This prevents XSS attacks from stealing authentication tokens
 
 // Base fetch wrapper with auth
+// Tokens are automatically sent via HttpOnly cookies
 async function fetchWithAuth(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const { accessToken } = getTokens();
-  
   const headers = {
     'Content-Type': 'application/json',
-    ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include', // Include HttpOnly cookies
   });
 
   // Handle token refresh if needed (401)
-  if (response.status === 401 && refreshToken) {
-    // TODO: Implement token refresh logic
-    // For now, redirect to login
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+  if (response.status === 401) {
+    // Try to refresh token
+    const refreshResponse = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (refreshResponse.ok) {
+      // Retry original request with new token
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+    } else {
+      // Refresh failed, redirect to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   }
 
@@ -91,23 +77,23 @@ export interface AuthResponse {
 
 export const authAPI = {
   // Login with email and password
+  // Now uses Next.js API route that sets HttpOnly cookies
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const formData = new FormData();
-    formData.append('username', credentials.email);
-    formData.append('password', credentials.password);
-
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+      credentials: 'include',
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Login failed');
+      throw new Error(error.error || 'Login failed');
     }
 
     const data = await response.json();
-    setTokens(data.access_token);
     return data;
   },
 
@@ -126,8 +112,10 @@ export const authAPI = {
 
   // Logout
   async logout() {
-    clearTokens();
-    // TODO: Call backend logout endpoint if needed
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
   },
 };
 
@@ -281,15 +269,25 @@ class WebSocketManager {
     }
 
     this.clientId = clientId;
-    const { accessToken } = getTokens();
-    const wsUrl = `${WS_BASE_URL}/ws/${clientId}${accessToken ? `?token=${accessToken}` : ''}`;
+    // Use secure WebSocket URL (wss:// in production)
+    const wsUrl = `${WS_BASE_URL}/ws/${clientId}`;
+    const secureWsUrl = process.env.NODE_ENV === 'production' 
+      ? wsUrl.replace(/^ws:/, 'wss:')
+      : wsUrl;
 
     try {
-      this.ws = new WebSocket(wsUrl);
+      this.ws = new WebSocket(secureWsUrl);
 
       this.ws.onopen = () => {
         console.log('WebSocket connected');
         this.reconnectAttempts = 0;
+        
+        // Send authentication after connection (not in URL)
+        // Token will be validated by backend via cookie
+        this.ws?.send(JSON.stringify({
+          type: 'auth',
+          timestamp: new Date().toISOString(),
+        }));
       };
 
       this.ws.onmessage = (event) => {
