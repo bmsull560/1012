@@ -13,8 +13,8 @@ gitpython==3.1.41
 tiktoken==0.5.2
 
 # Data Processing
-pydantic==2.5.0
-pydantic[email]==2.5.0
+pydantic>=2.6.3
+pydantic[email]>=2.6.3
 
 # HTTP Requests & Framework
 httpx==0.25.2
