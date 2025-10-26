@@ -361,7 +361,7 @@ export default function TenantAdminPage() {
             />
           </div>
           
-          <Select value={statusFilter} onValueChange={(v: string) => setStatusFilter(v)}>
+          <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v as TenantStatus | "all")}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
