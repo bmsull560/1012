@@ -361,7 +361,7 @@ export default function TenantAdminPage() {
             />
           </div>
           
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+          <Select value={statusFilter} onValueChange={(v: string) => setStatusFilter(v)}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
@@ -587,7 +587,7 @@ export default function TenantAdminPage() {
               <Label htmlFor="plan">Subscription Plan</Label>
               <Select
                 value={newTenantData.plan}
-                onValueChange={(value) => setNewTenantData({ ...newTenantData, plan: value })}
+                onValueChange={(value: string) => setNewTenantData({ ...newTenantData, plan: value })}
               >
                 <SelectTrigger id="plan">
                   <SelectValue />
@@ -603,7 +603,7 @@ export default function TenantAdminPage() {
               <Label htmlFor="industry">Industry</Label>
               <Select
                 value={newTenantData.industry}
-                onValueChange={(value) => setNewTenantData({ ...newTenantData, industry: value })}
+                onValueChange={(value: string) => setNewTenantData({ ...newTenantData, industry: value })}
               >
                 <SelectTrigger id="industry">
                   <SelectValue placeholder="Select industry" />

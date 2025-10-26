@@ -198,6 +198,7 @@ export const DialogFooter = ({ children }: any) => (
     {children}
   </div>
 )
+export const DialogClose = ({ children, ...props }: any) => <button {...props}>{children}</button>
 
 // Alert components
 export const Alert = ({ children, className, ...props }: any) => (
@@ -244,6 +245,27 @@ export const DropdownMenuLabel = ({ children, ...props }: any) => (
 export const DropdownMenuSeparator = ({ ...props }: any) => (
   <div className="-mx-1 my-1 h-px bg-muted" {...props} />
 )
+export const DropdownMenuGroup = ({ children, ...props }: any) => <div {...props}>{children}</div>
+export const DropdownMenuPortal = ({ children, ...props }: any) => <>{children}</>
+export const DropdownMenuSub = ({ children, ...props }: any) => <>{children}</>
+export const DropdownMenuSubContent = ({ children, ...props }: any) => (
+  <div className="z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md" {...props}>
+    {children}
+  </div>
+)
+export const DropdownMenuSubTrigger = ({ children, ...props }: any) => <button {...props}>{children}</button>
+export const DropdownMenuRadioGroup = ({ children, ...props }: any) => <div {...props}>{children}</div>
+export const DropdownMenuRadioItem = ({ children, ...props }: any) => (
+  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground" {...props}>
+    {children}
+  </div>
+)
+export const DropdownMenuCheckboxItem = ({ children, ...props }: any) => (
+  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground" {...props}>
+    {children}
+  </div>
+)
+export const DropdownMenuShortcut = ({ children, ...props }: any) => <span className="ml-auto text-xs tracking-widest opacity-60" {...props}>{children}</span>
 
 // Collapsible components
 export const Collapsible = ({ children }: any) => <>{children}</>
