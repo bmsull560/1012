@@ -8,6 +8,33 @@ from uuid import uuid4
 import jwt
 import os
 
+
+class FakeRedisClient:
+    """Minimal async Redis replacement for unit tests."""
+
+    def __init__(self):
+        self._values: dict[str, int] = {}
+        self._expirations: dict[str, datetime] = {}
+
+    async def incr(self, key: str) -> int:
+        self._purge_expired(key)
+        new_value = self._values.get(key, 0) + 1
+        self._values[key] = new_value
+        return new_value
+
+    async def expire(self, key: str, seconds: int) -> None:
+        self._expirations[key] = datetime.utcnow() + timedelta(seconds=seconds)
+
+    async def close(self) -> None:
+        self._values.clear()
+        self._expirations.clear()
+
+    def _purge_expired(self, key: str) -> None:
+        expiration = self._expirations.get(key)
+        if expiration and expiration <= datetime.utcnow():
+            self._values.pop(key, None)
+            self._expirations.pop(key, None)
+
 from backend.auth import (
     verify_password, get_password_hash,
     create_access_token, create_refresh_token,
@@ -126,7 +153,11 @@ class TestRateLimiter:
     @pytest.mark.asyncio
     async def test_rate_limiter_allows_requests(self):
         """Test rate limiter allows requests within limit"""
-        limiter = RateLimiter(max_requests=5, window_seconds=60)
+        limiter = RateLimiter(
+            max_requests=5,
+            window_seconds=60,
+            redis_client=FakeRedisClient(),
+        )
         
         key = "test_user_1"
         
@@ -138,7 +169,11 @@ class TestRateLimiter:
     @pytest.mark.asyncio
     async def test_rate_limiter_blocks_excess_requests(self):
         """Test rate limiter blocks requests over limit"""
-        limiter = RateLimiter(max_requests=3, window_seconds=60)
+        limiter = RateLimiter(
+            max_requests=3,
+            window_seconds=60,
+            redis_client=FakeRedisClient(),
+        )
         
         key = "test_user_2"
         
@@ -154,7 +189,11 @@ class TestRateLimiter:
     @pytest.mark.asyncio
     async def test_rate_limiter_resets_after_window(self):
         """Test rate limiter resets after time window"""
-        limiter = RateLimiter(max_requests=2, window_seconds=1)
+        limiter = RateLimiter(
+            max_requests=2,
+            window_seconds=1,
+            redis_client=FakeRedisClient(),
+        )
         
         key = "test_user_3"
         
@@ -169,3 +208,28 @@ class TestRateLimiter:
         
         # Should be allowed again
         assert await limiter.check_rate_limit(key) is True
+
+    @pytest.mark.asyncio
+    async def test_rate_limiter_falls_back_to_memory_on_errors(self):
+        """Redis failures should not break rate limiting enforcement."""
+
+        class FailingRedis:
+            async def incr(self, key: str) -> int:
+                raise ConnectionError("redis unavailable")
+
+            async def expire(self, key: str, seconds: int) -> None:
+                return None
+
+            async def close(self) -> None:
+                return None
+
+        limiter = RateLimiter(
+            max_requests=1,
+            window_seconds=60,
+            redis_client=FailingRedis(),
+        )
+
+        key = "fallback_user"
+
+        assert await limiter.check_rate_limit(key) is True
+        assert await limiter.check_rate_limit(key) is False

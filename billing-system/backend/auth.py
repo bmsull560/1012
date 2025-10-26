@@ -179,33 +179,132 @@ def require_scopes(*required_scopes: str):
     return scope_checker
 
 # Rate limiting decorator
+import logging
 from functools import wraps
 from collections import defaultdict
 from datetime import datetime
 import asyncio
 
+try:
+    import redis.asyncio as redis
+except Exception:  # pragma: no cover - redis is optional for local dev
+    redis = None
+
+logger = logging.getLogger(__name__)
+
 class RateLimiter:
-    def __init__(self, max_requests: int = 100, window_seconds: int = 60):
+    def __init__(
+        self,
+        max_requests: int = 100,
+        window_seconds: int = 60,
+        *,
+        redis_client: Optional[Any] = None,
+        redis_url: Optional[str] = None,
+    ) -> None:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
+        self._redis_client: Optional[Any] = redis_client
+        self._redis_url = redis_url or os.getenv("RATE_LIMIT_REDIS_URL") or os.getenv("REDIS_URL")
+        self._redis_lock = asyncio.Lock()
+        self._memory_lock = asyncio.Lock()
+        self._use_local_fallback = False
+
+        if self._redis_client is None and redis is None:
+            self._use_local_fallback = True
+        elif self._redis_client is None and not self._redis_url:
+            self._use_local_fallback = True
         self.requests = defaultdict(list)
-    
-    async def check_rate_limit(self, key: str) -> bool:
-        """Check if rate limit is exceeded"""
+
+    async def _initialize_redis_client(self) -> Optional[Any]:
+        if self._redis_client is not None:
+            return self._redis_client
+
+        if self._use_local_fallback:
+            return None
+
+        if redis is None:
+            self._use_local_fallback = True
+            return None
+
+        if not self._redis_url:
+            self._use_local_fallback = True
+            return None
+
+        async with self._redis_lock:
+            if self._redis_client is not None or self._use_local_fallback:
+                return self._redis_client
+
+            try:
+                # Attempt to create a shared Redis client for distributed rate limiting
+                self._redis_client = await redis.from_url(
+                    self._redis_url,
+                    decode_responses=True,
+                )
+            except Exception as exc:  # pragma: no cover - network failures
+                logger.warning(
+                    "Failed to initialize Redis for rate limiting. Falling back to in-memory storage: %s",
+                    exc,
+                )
+                self._use_local_fallback = True
+                self._redis_url = None
+
+        return self._redis_client
+
+    async def _close_redis(self) -> None:
+        if self._redis_client is None:
+            return
+
+        try:
+            await self._redis_client.close()
+        except Exception:  # pragma: no cover - defensive cleanup
+            pass
+        finally:
+            self._redis_client = None
+            self._use_local_fallback = True
+            self._redis_url = None
+
+    async def _check_in_memory(self, key: str) -> bool:
         now = datetime.utcnow()
         minute_ago = now - timedelta(seconds=self.window_seconds)
-        
-        # Clean old requests
-        self.requests[key] = [
-            req_time for req_time in self.requests[key]
-            if req_time > minute_ago
-        ]
-        
-        if len(self.requests[key]) >= self.max_requests:
-            return False
-        
-        self.requests[key].append(now)
-        return True
+
+        async with self._memory_lock:
+            # Clean old requests
+            self.requests[key] = [
+                req_time for req_time in self.requests[key]
+                if req_time > minute_ago
+            ]
+
+            if len(self.requests[key]) >= self.max_requests:
+                return False
+
+            self.requests[key].append(now)
+            return True
+
+    async def check_rate_limit(self, key: str) -> bool:
+        """Check if rate limit is exceeded"""
+        client = await self._initialize_redis_client()
+
+        if client is not None and not self._use_local_fallback:
+            try:
+                current_count = await client.incr(key)
+
+                if current_count == 1:
+                    # First request in the window, set expiration
+                    await client.expire(key, self.window_seconds)
+
+                if current_count > self.max_requests:
+                    return False
+
+                return True
+            except Exception as exc:  # pragma: no cover - operational fallback
+                logger.warning(
+                    "Redis rate limiting failed for key %s. Falling back to in-memory storage: %s",
+                    key,
+                    exc,
+                )
+                await self._close_redis()
+
+        return await self._check_in_memory(key)
 
 rate_limiter = RateLimiter()
 
