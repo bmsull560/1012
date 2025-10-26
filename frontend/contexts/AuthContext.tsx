@@ -61,8 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       } catch (error) {
-        console.error('Error checking auth:', error);
-        // No need to clear localStorage - tokens are in HttpOnly cookies
+        const { logger } = await import('@/lib/logger');
+        logger.error('Error checking auth', { error });
       } finally {
         setLoading(false);
       }
@@ -95,7 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return { error: 'Login failed' };
     } catch (err: any) {
-      console.error('Sign in error:', err);
+      const { logger } = await import('@/lib/logger');
+      logger.error('Sign in error', { error: err });
       return { error: err.message || 'Sign in failed' };
     }
   };
@@ -108,7 +109,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // const response = await authAPI.signup({ email, password });
       return { error: 'Sign up not yet implemented. Please contact admin for account creation.' };
     } catch (err: any) {
-      console.error('Sign up error:', err);
+      const { logger } = await import('@/lib/logger');
+      logger.error('Sign up error', { error: err });
       return { error: err.message || 'Sign up failed' };
     }
   };
@@ -123,7 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { stopTokenRefresh } = await import('@/lib/token-refresh');
       stopTokenRefresh();
     } catch (error) {
-      console.error('Sign out error:', error);
+      const { logger } = await import('@/lib/logger');
+      logger.error('Sign out error', { error });
     }
   };
 
