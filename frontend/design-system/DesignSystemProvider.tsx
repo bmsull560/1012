@@ -20,7 +20,7 @@ export const DesignSystemProvider: React.FC<DesignSystemProviderProps> = ({
   children,
   tokens = lightTokens,
 }) => {
-  const cssVariables = useMemo(() => tokensToCSSVariables(tokens), [tokens])
+  const cssVariables = useMemo<React.CSSProperties>(() => tokensToCSSVariables(tokens) as React.CSSProperties, [tokens])
 
   // Helper to convert cssVariables object to CSS string
   const cssVariablesString = useMemo(() => {
