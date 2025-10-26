@@ -93,19 +93,30 @@ export default function AuthPage() {
     if (!validateForm()) return;
     
     try {
+      // Mock user object for demonstration
+      const mockUser = {
+        id: Math.random().toString(36).substr(2, 9),
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: (formData.role as any) || 'analyst',
+        expertiseLevel: 'beginner' as const,
+        preferences: {
+          theme: 'light' as const,
+          dataGranularity: 'summary' as const,
+          showFormulas: false,
+          enableNotifications: true,
+        },
+      };
+      
+      const mockToken = 'mock_token_' + Math.random().toString(36).substr(2, 9);
+      const mockRefreshToken = 'mock_refresh_' + Math.random().toString(36).substr(2, 9);
+      
       if (mode === "login") {
-        await login(formData.email, formData.password);
+        login(mockUser, mockToken, mockRefreshToken);
         router.push("/workspace");
       } else {
-        await register({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          company: formData.company,
-          phone: formData.phone,
-          role: formData.role,
-        });
+        register(mockUser, mockToken, mockRefreshToken);
         setSuccessMessage("Account created successfully! Please check your email to verify your account.");
         setTimeout(() => {
           setMode("login");

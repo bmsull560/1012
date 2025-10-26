@@ -24,9 +24,12 @@ interface AuthState {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
+  isLoading?: boolean;
+  error?: string | null;
   
   // Actions
   login: (user: User, token: string, refreshToken: string) => void;
+  register: (user: User, token: string, refreshToken: string) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   setToken: (token: string) => void;
@@ -41,6 +44,8 @@ export const useAuthStore = create<AuthState>()(
         user: null,
         token: null,
         refreshToken: null,
+        isLoading: false,
+        error: null,
         
         // Actions
         login: (user, token, refreshToken) => set({
@@ -48,6 +53,17 @@ export const useAuthStore = create<AuthState>()(
           user,
           token,
           refreshToken,
+          isLoading: false,
+          error: null,
+        }),
+        
+        register: (user, token, refreshToken) => set({
+          isAuthenticated: true,
+          user,
+          token,
+          refreshToken,
+          isLoading: false,
+          error: null,
         }),
         
         logout: () => set({
