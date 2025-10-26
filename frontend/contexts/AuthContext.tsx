@@ -12,11 +12,19 @@ interface User {
   role_id?: string;
 }
 
+interface SignUpData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  organizationName: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (data: SignUpData) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -101,13 +109,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string): Promise<{ error?: string }> => {
-    // Note: Sign up needs to be implemented in your backend
-    // For now, we'll redirect to sign in
+  const signUp = async (data: SignUpData): Promise<{ error?: string }> => {
     try {
-      // TODO: Call backend signup endpoint when available
-      // const response = await authAPI.signup({ email, password });
-      return { error: 'Sign up not yet implemented. Please contact admin for account creation.' };
+      // Call backend signup endpoint
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          organization_name: data.organizationName,
+        }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return { error: error.detail || 'Sign up failed' };
+      }
+
+      // Sign up successful - user needs to verify email
+      return {};
     } catch (err: any) {
       const { logger } = await import('@/lib/logger');
       logger.error('Sign up error', { error: err });
