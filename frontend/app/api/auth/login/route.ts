@@ -5,11 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { setAuthCookies } from '@/lib/auth';
+import { validateCsrfMiddleware } from '@/lib/csrf';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate CSRF token
+    const csrfValidation = await validateCsrfMiddleware(request);
+    if (!csrfValidation.valid) {
+      return NextResponse.json(
+        { error: csrfValidation.error || 'CSRF validation failed' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 

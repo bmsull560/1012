@@ -11,16 +11,41 @@ const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 // Note: Tokens are now managed server-side via HttpOnly cookies
 // This prevents XSS attacks from stealing authentication tokens
 
+// Get CSRF token from cookie
+function getCsrfToken(): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'csrf_token_client') {
+      return decodeURIComponent(value);
+    }
+  }
+  
+  return null;
+}
+
 // Base fetch wrapper with auth
 // Tokens are automatically sent via HttpOnly cookies
 async function fetchWithAuth(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const headers = {
+  const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
+
+  // Add CSRF token for state-changing requests
+  if (options.method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
 
   let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
