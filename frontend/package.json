@@ -7,8 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "jest --coverage --passWithNoTests",
+    "test:watch": "jest --watch",
     "test:ui": "playwright test",
-    "test:ui:debug": "playwright test --debug"
+    "test:ui:debug": "playwright test --debug",
+    "test:e2e": "playwright test",
+    "type-check": "tsc --noEmit",
+    "test:a11y": "pa11y-ci --sitemap http://localhost:3000/sitemap.xml"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",
