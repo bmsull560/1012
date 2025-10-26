@@ -1,0 +1,335 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: valueverse-prod
+data:
+  alerts.yml: |
+    groups:
+    - name: valueverse_critical
+      interval: 30s
+      rules:
+      
+      # Service Availability Alerts
+      - alert: ServiceDown
+        expr: up{namespace="valueverse-prod"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} in {{ $labels.namespace }} has been down for more than 2 minutes."
+          runbook_url: "https://wiki.valueverse.com/runbooks/service-down"
+      
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5..",namespace="valueverse-prod"}[5m])) by (service)
+            /
+            sum(rate(http_requests_total{namespace="valueverse-prod"}[5m])) by (service)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High error rate for {{ $labels.service }}"
+          description: "{{ $labels.service }} has error rate of {{ $value | humanizePercentage }} for the last 5 minutes."
+          runbook_url: "https://wiki.valueverse.com/runbooks/high-error-rate"
+      
+      # Database Connection Pool Exhaustion
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          pg_stat_database_numbackends{datname="valueverse_production"} 
+          / 
+          pg_settings_max_connections > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "PostgreSQL connection pool is {{ $value | humanizePercentage }} full."
+          runbook_url: "https://wiki.valueverse.com/runbooks/db-connections"
+      
+      # Redis Memory Usage
+      - alert: RedisMemoryHigh
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Redis memory usage critical"
+          description: "Redis memory usage is at {{ $value | humanizePercentage }}."
+          runbook_url: "https://wiki.valueverse.com/runbooks/redis-memory"
+
+    - name: valueverse_warning
+      interval: 1m
+      rules:
+      
+      # High Response Time
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{namespace="valueverse-prod"}[5m])) by (service, le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High response time for {{ $labels.service }}"
+          description: "95th percentile response time for {{ $labels.service }} is {{ $value }}s."
+          runbook_url: "https://wiki.valueverse.com/runbooks/high-latency"
+      
+      # Pod CPU Usage
+      - alert: PodCPUHigh
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{namespace="valueverse-prod"}[5m])) by (pod) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High CPU usage for pod {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} CPU usage is {{ $value | humanizePercentage }}."
+          runbook_url: "https://wiki.valueverse.com/runbooks/high-cpu"
+      
+      # Pod Memory Usage
+      - alert: PodMemoryHigh
+        expr: |
+          sum(container_memory_working_set_bytes{namespace="valueverse-prod"}) by (pod) 
+          / 
+          sum(container_spec_memory_limit_bytes{namespace="valueverse-prod"}) by (pod) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High memory usage for pod {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}."
+          runbook_url: "https://wiki.valueverse.com/runbooks/high-memory"
+      
+      # Disk Space Warning
+      - alert: DiskSpaceWarning
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.2
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space on {{ $labels.instance }} is below 20% ({{ $value | humanizePercentage }} remaining)."
+          runbook_url: "https://wiki.valueverse.com/runbooks/disk-space"
+      
+      # Certificate Expiry Warning
+      - alert: CertificateExpiryWarning
+        expr: |
+          certmanager_certificate_expiration_timestamp_seconds - time() < 7 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Certificate expiring soon for {{ $labels.name }}"
+          description: "Certificate {{ $labels.name }} will expire in {{ $value | humanizeDuration }}."
+          runbook_url: "https://wiki.valueverse.com/runbooks/cert-renewal"
+
+    - name: valueverse_business
+      interval: 5m
+      rules:
+      
+      # Low User Activity
+      - alert: LowUserActivity
+        expr: |
+          sum(rate(user_sessions_active[1h])) < 10
+        for: 30m
+        labels:
+          severity: info
+          team: product
+        annotations:
+          summary: "Low user activity detected"
+          description: "Active user sessions are below threshold ({{ $value }} sessions/hour)."
+          dashboard_url: "https://grafana.valueverse.com/d/user-activity"
+      
+      # High Value Model Creation Rate
+      - alert: HighModelCreationRate
+        expr: |
+          sum(rate(value_models_created_total[5m])) > 100
+        for: 10m
+        labels:
+          severity: info
+          team: product
+        annotations:
+          summary: "High rate of value model creation"
+          description: "{{ $value }} models per second being created."
+          dashboard_url: "https://grafana.valueverse.com/d/business-metrics"
+      
+      # Billing Service Errors
+      - alert: BillingServiceErrors
+        expr: |
+          sum(rate(billing_errors_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: billing
+        annotations:
+          summary: "Billing service experiencing errors"
+          description: "Billing service has {{ $value }} errors per second."
+          runbook_url: "https://wiki.valueverse.com/runbooks/billing-errors"
+      
+      # Rate Limiting Active
+      - alert: RateLimitingActive
+        expr: |
+          sum(rate(rate_limit_exceeded_total[5m])) by (service) > 10
+        for: 5m
+        labels:
+          severity: info
+          team: security
+        annotations:
+          summary: "Rate limiting active on {{ $labels.service }}"
+          description: "{{ $labels.service }} is rate limiting {{ $value }} requests per second."
+          dashboard_url: "https://grafana.valueverse.com/d/security"
+
+    - name: valueverse_sla
+      interval: 1m
+      rules:
+      
+      # SLA Violation - Availability
+      - alert: SLAAvailabilityViolation
+        expr: |
+          (1 - (
+            sum(rate(http_requests_total{status=~"5..",namespace="valueverse-prod"}[1h]))
+            /
+            sum(rate(http_requests_total{namespace="valueverse-prod"}[1h]))
+          )) < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          sla: availability
+        annotations:
+          summary: "SLA availability violation"
+          description: "System availability is {{ $value | humanizePercentage }}, below 99.9% SLA."
+          runbook_url: "https://wiki.valueverse.com/runbooks/sla-availability"
+      
+      # SLA Violation - Response Time
+      - alert: SLAResponseTimeViolation
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{namespace="valueverse-prod"}[5m])) by (le)
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          sla: performance
+        annotations:
+          summary: "SLA response time violation"
+          description: "99th percentile response time is {{ $value }}s, above 3s SLA."
+          runbook_url: "https://wiki.valueverse.com/runbooks/sla-response-time"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: valueverse-prod
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      slack_api_url: 'YOUR_SLACK_WEBHOOK_URL'
+      pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'default'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical'
+        continue: true
+      - match:
+          severity: warning
+        receiver: 'warning'
+      - match:
+          team: database
+        receiver: 'database-team'
+      - match:
+          team: billing
+        receiver: 'billing-team'
+      - match:
+          sla: availability
+        receiver: 'sla-violations'
+
+    receivers:
+    - name: 'default'
+      slack_configs:
+      - channel: '#alerts'
+        title: 'ValueVerse Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}'
+
+    - name: 'critical'
+      slack_configs:
+      - channel: '#critical-alerts'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+      pagerduty_configs:
+      - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+      email_configs:
+      - to: 'oncall@valueverse.com'
+        from: 'alerts@valueverse.com'
+        smarthost: 'smtp.sendgrid.net:587'
+        auth_username: 'apikey'
+        auth_password: 'YOUR_SENDGRID_API_KEY'
+        headers:
+          Subject: 'CRITICAL Alert: {{ .GroupLabels.alertname }}'
+
+    - name: 'warning'
+      slack_configs:
+      - channel: '#warnings'
+        title: '⚠️ Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+    - name: 'database-team'
+      slack_configs:
+      - channel: '#database-alerts'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+      email_configs:
+      - to: 'database-team@valueverse.com'
+
+    - name: 'billing-team'
+      slack_configs:
+      - channel: '#billing-alerts'
+        title: 'Billing Alert: {{ .GroupLabels.alertname }}'
+      email_configs:
+      - to: 'billing-team@valueverse.com'
+
+    - name: 'sla-violations'
+      slack_configs:
+      - channel: '#sla-violations'
+        title: '📊 SLA Violation: {{ .GroupLabels.alertname }}'
+      email_configs:
+      - to: 'management@valueverse.com,oncall@valueverse.com'
+        from: 'sla-alerts@valueverse.com'
+        headers:
+          Subject: 'SLA VIOLATION: {{ .GroupLabels.alertname }}'
+          Priority: 'Urgent'
+
+    inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'cluster', 'service']

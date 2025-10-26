@@ -37,6 +37,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // For development, we'll use mock values if not configured
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// In production, throw error if Supabase is not configured
+if (!isDevelopment && (!supabaseUrl || !supabaseAnonKey)) {
+  throw new Error('Supabase configuration is required in production. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.');
+}
+
 export const supabase = supabaseUrl && supabaseAnonKey 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;

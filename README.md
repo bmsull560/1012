@@ -7,32 +7,14 @@
 
 ```
 valueverse/
-├── backend/               # Production FastAPI backend
-│   ├── app/              # Application modules
-│   ├── tests/            # Backend tests
-│   ├── requirements.txt  # Python dependencies
-│   └── Dockerfile        # Backend container
-│
-├── frontend/              # Next.js 14 frontend
-│   ├── app/              # App directory (pages)
-│   ├── components/       # React components
-│   ├── services/         # API services
-│   └── package.json      # Node dependencies
-│
-├── infrastructure/        # Deployment configurations
-│   ├── docker/           # Docker Compose files
-│   ├── kubernetes/       # K8s manifests
-│   └── config/           # Nginx, Prometheus configs
-│
-├── scripts/              # Utility scripts
-│   ├── setup/           # Setup scripts
-│   ├── deploy/          # Deployment scripts
-│   └── maintenance/     # Maintenance scripts
-│
-└── docs/                # Documentation
-    ├── architecture/    # System design
-    ├── deployment/      # Deployment guides
-    └── development/     # Dev guides
+├── services/             # FastAPI microservices (architect, committer, etc.)
+├── billing-system/       # Dedicated billing service (FastAPI + Stripe)
+├── frontend/             # Next.js 14 frontend (App Router)
+├── infrastructure/       # Docker + Kubernetes configurations
+├── scripts/              # Deployment and maintenance automation
+├── docs/                 # Architecture, deployment, and dev guides
+├── docker-compose.*.yml  # Compose bundles for microservices + tooling
+└── requirements.txt      # Python dependency lock (see section below)
 ```
 
 ## ⚡ Quick Start - One Command Deployment
@@ -132,22 +114,31 @@ make deploy
 
 ## Development
 
+### Dependencies
+
+- **Python services:** `pip install -r requirements.txt` installs pinned versions consumed by scripts and microservices. Service-specific extras live alongside each microservice (e.g., `services/value-architect/requirements.txt`).
+- **Node frontend:** `npm install` respects the committed `package-lock.json` to guarantee reproducible builds.
+
 ### Running the Application
 
-Ensure your virtual environment is activated (`source .venv/bin/activate`).
+For targeted service development you can run components individually:
 
-**Backend (FastAPI):**
+**Microservices (FastAPI):**
 
 ```bash
-cd src/backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-# API docs: http://localhost:8000/docs
+# Example: Value Architect service
+cd services/value-architect
+uvicorn main:app --reload --host 0.0.0.0 --port 8001
+# Docs: http://localhost:8001/docs
 ```
+
+The billing engine lives in `billing-system/backend/billing_service.py` and exposes documentation at `/api/docs` when run via `uvicorn` or Docker.
 
 **Frontend (Next.js):**
 
 ```bash
 cd frontend
+npm install
 npm run dev
 # App: http://localhost:3000
 ```

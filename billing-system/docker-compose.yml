@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: billing_db
       POSTGRES_USER: billing_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword123}
+      POSTGRES_PASSWORD: ${DB_PASSWORD?DB_PASSWORD must be set}
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -27,7 +27,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: billing-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword123}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD?REDIS_PASSWORD must be set}
     volumes:
       - redis_data:/data
     ports:
@@ -81,12 +81,12 @@ services:
       dockerfile: Dockerfile
     container_name: billing-api
     environment:
-      DATABASE_URL: postgresql://billing_user:${DB_PASSWORD:-securepassword123}@postgres:5432/billing_db
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword123}@redis:6379/0
+      DATABASE_URL: ${DATABASE_URL?DATABASE_URL must be set}
+      REDIS_URL: ${REDIS_URL?REDIS_URL must be set}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-here}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY?JWT_SECRET_KEY must be set}
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8000:8000"

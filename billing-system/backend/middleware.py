@@ -5,12 +5,15 @@ Security middleware and CORS configuration for ValueVerse Billing System
 import os
 import time
 import uuid
-from typing import Callable
+import asyncio
+from typing import Callable, Optional
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import logging
+import redis.asyncio as redis
+from redis.exceptions import RedisError
 
 logger = logging.getLogger(__name__)
 
@@ -140,16 +143,89 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple rate limiting middleware"""
     
-    def __init__(self, app, calls: int = 100, period: int = 60):
+    def __init__(
+        self,
+        app,
+        calls: int = 100,
+        period: int = 60,
+        redis_url: Optional[str] = None,
+    ):
         super().__init__(app)
         self.calls = calls
         self.period = period
+        self.redis_url = redis_url or os.getenv(
+            "RATE_LIMIT_REDIS_URL",
+            os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+        )
         self.clients = {}
+        self.redis_client: Optional[redis.Redis] = None
+        self._redis_lock = asyncio.Lock()
+        # expose instance for shutdown cleanup
+        setattr(app.state, "rate_limit_middleware", self)
+
+    async def _get_redis_client(self) -> Optional[redis.Redis]:
+        if not self.redis_url:
+            return None
+        if self.redis_client:
+            return self.redis_client
+        async with self._redis_lock:
+            if self.redis_client:
+                return self.redis_client
+            try:
+                client = redis.from_url(
+                    self.redis_url, encoding="utf-8", decode_responses=True
+                )
+                await client.ping()
+                self.redis_client = client
+                logger.info("Rate limit middleware connected to Redis")
+            except (RedisError, ConnectionError) as exc:
+                logger.warning(
+                    "Rate limit middleware failed to connect to Redis (%s); falling back to in-memory counters",
+                    exc,
+                )
+                self.redis_client = None
+            return self.redis_client
+
+    async def close(self) -> None:
+        if self.redis_client:
+            await self.redis_client.close()
+            self.redis_client = None
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         if request.client:
             client_id = request.client.host
             now = time.time()
+            redis_client = await self._get_redis_client()
+            if redis_client:
+                key = f"rate_limit:{client_id}:{request.url.path}"
+                try:
+                    current_count = await redis_client.incr(key)
+                    if current_count == 1:
+                        await redis_client.expire(key, self.period)
+                    if current_count > self.calls:
+                        retry_after = await redis_client.ttl(key)
+                        retry_after = retry_after if retry_after and retry_after > 0 else self.period
+                        return Response(
+                            content="Rate limit exceeded",
+                            status_code=429,
+                            headers={
+                                "X-RateLimit-Limit": str(self.calls),
+                                "X-RateLimit-Remaining": "0",
+                                "Retry-After": str(retry_after),
+                            },
+                        )
+                    response = await call_next(request)
+                    remaining = max(0, self.calls - current_count)
+                    response.headers["X-RateLimit-Limit"] = str(self.calls)
+                    response.headers["X-RateLimit-Remaining"] = str(remaining)
+                    if remaining == 0:
+                        ttl = await redis_client.ttl(key)
+                        if ttl and ttl > 0:
+                            response.headers["Retry-After"] = str(ttl)
+                    return response
+                except RedisError as exc:
+                    logger.error("Redis rate limiting error: %s", exc)
+                    # fall back to in-memory counters below
             
             # Clean old entries
             self.clients = {
@@ -190,6 +266,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 remaining = self.calls - self.clients[client_id]["request_count"]
                 response.headers["X-RateLimit-Limit"] = str(self.calls)
                 response.headers["X-RateLimit-Remaining"] = str(max(0, remaining))
+                if remaining <= 0:
+                    reset = self.period - (now - self.clients[client_id]["first_request"])
+                    response.headers["Retry-After"] = str(max(0, int(reset)))
             
             return response
         
@@ -215,10 +294,17 @@ def configure_middleware(app: FastAPI) -> None:
     
     # Add rate limiting in production
     if os.getenv("ENVIRONMENT") == "production":
-        app.add_middleware(
-            RateLimitMiddleware,
-            calls=int(os.getenv("RATE_LIMIT_CALLS", "100")),
-            period=int(os.getenv("RATE_LIMIT_PERIOD", "60"))
-        )
+        rate_limit_kwargs = {
+            "calls": int(os.getenv("RATE_LIMIT_CALLS", "100")),
+            "period": int(os.getenv("RATE_LIMIT_PERIOD", "60")),
+            "redis_url": os.getenv("RATE_LIMIT_REDIS_URL"),
+        }
+        app.add_middleware(RateLimitMiddleware, **rate_limit_kwargs)
+        
+        @app.on_event("shutdown")
+        async def _shutdown_rate_limit() -> None:
+            middleware_instance = getattr(app.state, "rate_limit_middleware", None)
+            if middleware_instance:
+                await middleware_instance.close()
     
     logger.info("All middleware configured successfully")

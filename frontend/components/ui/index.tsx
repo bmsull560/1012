@@ -193,6 +193,11 @@ export const DialogContent = ({ children }: any) => (
 export const DialogHeader = ({ children }: any) => <div className="flex flex-col space-y-1.5 text-center sm:text-left">{children}</div>
 export const DialogTitle = ({ children }: any) => <h2 className="text-lg font-semibold leading-none tracking-tight">{children}</h2>
 export const DialogDescription = ({ children }: any) => <p className="text-sm text-muted-foreground">{children}</p>
+export const DialogFooter = ({ children }: any) => (
+  <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+    {children}
+  </div>
+)
 
 // Alert components
 export const Alert = ({ children, className, ...props }: any) => (
@@ -219,6 +224,26 @@ export const CommandList = ({ children }: any) => <div className="max-h-[300px] 
 export const CommandEmpty = ({ children }: any) => <div className="py-6 text-center text-sm">{children}</div>
 export const CommandGroup = ({ children }: any) => <div className="overflow-hidden p-1 text-foreground">{children}</div>
 export const CommandItem = ({ children }: any) => <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none">{children}</div>
+
+// DropdownMenu components
+export const DropdownMenu = ({ children }: any) => <div className="relative inline-block text-left">{children}</div>
+export const DropdownMenuTrigger = ({ children, ...props }: any) => <button {...props}>{children}</button>
+export const DropdownMenuContent = ({ children, ...props }: any) => (
+  <div className="z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md" {...props}>
+    {children}
+  </div>
+)
+export const DropdownMenuItem = ({ children, ...props }: any) => (
+  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50" {...props}>
+    {children}
+  </div>
+)
+export const DropdownMenuLabel = ({ children, ...props }: any) => (
+  <div className="px-2 py-1.5 text-sm font-semibold" {...props}>{children}</div>
+)
+export const DropdownMenuSeparator = ({ ...props }: any) => (
+  <div className="-mx-1 my-1 h-px bg-muted" {...props} />
+)
 
 // Collapsible components
 export const Collapsible = ({ children }: any) => <>{children}</>

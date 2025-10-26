@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/index";
 import {
   Table,
   TableBody,
@@ -115,7 +116,7 @@ export default function TenantAdminPage() {
 
   // Check if user is super admin
   useEffect(() => {
-    if (user?.role?.name !== "Super Admin") {
+    if (user?.role !== "admin") {
       router.push("/dashboard");
     }
   }, [user, router]);

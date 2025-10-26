@@ -1,0 +1,233 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: value-architect
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: value-architect
+  ports:
+  - port: 80
+    targetPort: 8001
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: value-committer
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: value-committer
+  ports:
+  - port: 80
+    targetPort: 8002
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: value-executor
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: value-executor
+  ports:
+  - port: 80
+    targetPort: 8003
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-service
+  namespace: valueverse-prod
+spec:
+  selector:
+    app: billing-service
+  ports:
+  - port: 80
+    targetPort: 8004
+  type: ClusterIP
+---
+# Ingress Configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: valueverse-ingress
+  namespace: valueverse-prod
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  tls:
+  - hosts:
+    - valueverse.com
+    - www.valueverse.com
+    - api.valueverse.com
+    secretName: valueverse-tls
+  rules:
+  - host: valueverse.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+  - host: www.valueverse.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+  - host: api.valueverse.com
+    http:
+      paths:
+      - path: /architect
+        pathType: Prefix
+        backend:
+          service:
+            name: value-architect
+            port:
+              number: 80
+      - path: /committer
+        pathType: Prefix
+        backend:
+          service:
+            name: value-committer
+            port:
+              number: 80
+      - path: /executor
+        pathType: Prefix
+        backend:
+          service:
+            name: value-executor
+            port:
+              number: 80
+      - path: /billing
+        pathType: Prefix
+        backend:
+          service:
+            name: billing-service
+            port:
+              number: 80
+---
+# HorizontalPodAutoscaler for Frontend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: valueverse-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# HorizontalPodAutoscaler for Value Architect
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: value-architect-hpa
+  namespace: valueverse-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: value-architect
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+# HorizontalPodAutoscaler for Billing Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: billing-service-hpa
+  namespace: valueverse-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: billing-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

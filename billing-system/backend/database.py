@@ -11,10 +11,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://billing_user:securepassword123@localhost:5432/billing_db"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required but was not provided. "
+        "Please configure a secure connection string before starting the billing service."
+    )
 
 # Create async engine with connection pooling
 engine = create_async_engine(
