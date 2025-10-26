@@ -14,9 +14,17 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text, event
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+
+try:  # pragma: no cover - imported during runtime
+    from .encryption_key_service import (
+        EncryptionKeyService,
+        KeyManagementError,
+    )
+except ImportError:  # pragma: no cover - fallback for direct module execution
+    from encryption_key_service import (
+        EncryptionKeyService,
+        KeyManagementError,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -133,48 +141,56 @@ class SecureDatabase:
                 await session.close()
 
 class EncryptionManager:
-    """
-    Manages field-level encryption for sensitive data
-    """
-    
+    """Manages field-level encryption for sensitive data with key rotation."""
+
     def __init__(self, master_key: Optional[str] = None):
-        self.master_key = master_key or os.getenv("ENCRYPTION_MASTER_KEY")
-        if not self.master_key:
-            # Generate a key for development (use KMS in production)
-            self.master_key = Fernet.generate_key().decode()
-            logger.warning("Generated development encryption key")
-        
-        self.fernet = Fernet(self.master_key.encode() if isinstance(self.master_key, str) else self.master_key)
-    
+        try:
+            self.key_service = EncryptionKeyService(master_key=master_key)
+        except KeyManagementError as exc:
+            raise RuntimeError(
+                "Failed to initialize encryption key management. Ensure the "
+                "ENCRYPTION_ACTIVE_KEY_VERSION and keyring configuration are set."
+            ) from exc
+
     def encrypt(self, plain_text: str) -> bytes:
-        """Encrypt sensitive data"""
-        if not plain_text:
+        """Encrypt sensitive data using the active key version."""
+        if plain_text is None:
             return None
-        return self.fernet.encrypt(plain_text.encode())
-    
+        return self.key_service.encrypt(plain_text)
+
     def decrypt(self, encrypted_data: bytes) -> str:
-        """Decrypt sensitive data"""
+        """Decrypt sensitive data respecting key versions."""
         if not encrypted_data:
             return None
-        return self.fernet.decrypt(encrypted_data).decode()
-    
+        return self.key_service.decrypt(encrypted_data)
+
     def encrypt_dict(self, data: Dict[str, Any], fields: List[str]) -> Dict[str, Any]:
-        """Encrypt specific fields in a dictionary"""
+        """Encrypt specific fields in a dictionary."""
         encrypted_data = data.copy()
         for field in fields:
             if field in encrypted_data and encrypted_data[field]:
-                encrypted_data[f"{field}_encrypted"] = self.encrypt(str(encrypted_data[field]))
+                encrypted_data[f"{field}_encrypted"] = self.encrypt(
+                    str(encrypted_data[field])
+                )
                 encrypted_data[field] = None  # Clear plaintext
         return encrypted_data
-    
+
     def decrypt_dict(self, data: Dict[str, Any], fields: List[str]) -> Dict[str, Any]:
-        """Decrypt specific fields in a dictionary"""
+        """Decrypt specific fields in a dictionary."""
         decrypted_data = data.copy()
         for field in fields:
             encrypted_field = f"{field}_encrypted"
             if encrypted_field in decrypted_data and decrypted_data[encrypted_field]:
                 decrypted_data[field] = self.decrypt(decrypted_data[encrypted_field])
         return decrypted_data
+
+    def is_rotation_due(self) -> bool:
+        """Return True when the configured rotation schedule is due."""
+        return self.key_service.is_rotation_due()
+
+    def rotate_key(self, new_version: Optional[str] = None) -> Dict[str, str]:
+        """Rotate encryption keys and return metadata for auditing."""
+        return self.key_service.rotate_key(new_version=new_version)
 
 class AuditLogger:
     """
