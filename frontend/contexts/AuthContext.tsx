@@ -50,6 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(currentUser);
           // Connect to WebSocket for agent communication
           agentAPI.connect(currentUser.id, currentUser.tenant_id);
+          
+          // Start automatic token refresh
+          const { startTokenRefresh } = await import('@/lib/token-refresh');
+          await startTokenRefresh({
+            onTokenExpired: () => {
+              // Token expired, log out user
+              signOut();
+            },
+          });
         }
       } catch (error) {
         console.error('Error checking auth:', error);
@@ -109,6 +118,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authAPI.logout();
       agentAPI.disconnect();
       setUser(null);
+      
+      // Stop token refresh
+      const { stopTokenRefresh } = await import('@/lib/token-refresh');
+      stopTokenRefresh();
     } catch (error) {
       console.error('Sign out error:', error);
     }
