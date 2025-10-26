@@ -24,7 +24,7 @@ export const DesignSystemProvider: React.FC<DesignSystemProviderProps> = ({
 
   // Helper to convert cssVariables object to CSS string
   const cssVariablesString = useMemo(() => {
-    return `:root { ${Object.entries(cssVariables).map(([key, value]) => `${key}: ${value};`).join(" ")} }`
+    return `:root {\n${Object.entries(cssVariables).map(([key, value]) => `  ${key}: ${value};`).join('\n')}\n}`;
   }, [cssVariables])
 
   return (
