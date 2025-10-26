@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { DesignSystemProvider } from '@/design-system/DesignSystemProvider'
+import { lightTokens } from '@/design-system/tokens'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { MonitoringProvider } from '@/components/providers/MonitoringProvider'
 
@@ -19,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <DesignSystemProvider tokens={lightTokens}>{children}</DesignSystemProvider>
         <MonitoringProvider>
           <ErrorBoundary
             fallback={
