@@ -5,7 +5,7 @@ Implements RLS, encryption, and audit trail from application layer
 
 import os
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from datetime import datetime
 from uuid import UUID
 import asyncio
@@ -138,13 +138,25 @@ class EncryptionManager:
     """
     
     def __init__(self, master_key: Optional[str] = None):
-        self.master_key = master_key or os.getenv("ENCRYPTION_MASTER_KEY")
-        if not self.master_key:
-            # Generate a key for development (use KMS in production)
-            self.master_key = Fernet.generate_key().decode()
-            logger.warning("Generated development encryption key")
-        
-        self.fernet = Fernet(self.master_key.encode() if isinstance(self.master_key, str) else self.master_key)
+        self.master_key = self._load_master_key(master_key)
+        self.fernet = Fernet(
+            self.master_key.encode() if isinstance(self.master_key, str) else self.master_key
+        )
+
+    def _load_master_key(self, override_key: Optional[Union[str, bytes]]) -> Union[str, bytes]:
+        """Load the encryption master key with fail-safe semantics."""
+        key: Optional[Union[str, bytes]] = override_key or os.getenv("ENCRYPTION_MASTER_KEY")
+
+        if not key:
+            # In production a dedicated KMS should be used. Failing fast prevents
+            # the application from running with an unknown transient key which
+            # would make existing ciphertext irrecoverable.
+            raise RuntimeError(
+                "Encryption master key is not configured. Set ENCRYPTION_MASTER_KEY "
+                "or provide a key via EncryptionManager(master_key=...)."
+            )
+
+        return key
     
     def encrypt(self, plain_text: str) -> bytes:
         """Encrypt sensitive data"""
