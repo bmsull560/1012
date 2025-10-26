@@ -107,18 +107,27 @@ Label.displayName = "Label"
 // Slider
 export const Slider = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { value?: number[]; onValueChange?: (value: number[]) => void }
->(({ className, value = [50], ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("relative flex w-full touch-none select-none items-center", className)}
-    {...props}
-  >
-    <div className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
-      <div className="absolute h-full bg-primary" style={{ width: `${value[0]}%` }} />
-    </div>
-  </div>
-))
+  React.HTMLAttributes<HTMLDivElement> & { value?: number[]; onValueChange?: (value: number[]) => void; min?: number; max?: number; step?: number }
+>(({ className, value = [50], min = 0, max = 100, step = 1, onValueChange, ...props }, ref) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = [parseInt(e.target.value)];
+    onValueChange?.(newValue);
+  };
+  
+  return (
+    <input
+      ref={ref as any}
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value[0] || 0}
+      onChange={handleChange}
+      className={cn("w-full", className)}
+      {...props}
+    />
+  );
+})
 Slider.displayName = "Slider"
 
 // Switch

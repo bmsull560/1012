@@ -299,7 +299,7 @@ export default function ValueModelWizard({
                   max={60}
                   step={1}
                   value={[model.timeline]}
-                  onValueChange={(value: string) => setModel({ ...model, timeline: value[0] })}
+                  onValueChange={(value: number[]) => setModel({ ...model, timeline: value[0] })}
                   className="flex-1"
                 />
                 <span className="w-16 text-right font-medium">
