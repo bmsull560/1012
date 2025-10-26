@@ -25,6 +25,7 @@ SQLAlchemy==2.0.23
 psycopg2-binary==2.9.9
 langchain-openai==0.1.0
 simple-salesforce==1.12.3
+redis[hiredis]==5.0.1
 
 # Tooling
 python-dotenv==1.0.0
