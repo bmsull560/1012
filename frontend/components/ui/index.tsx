@@ -1,5 +1,12 @@
-// Stub components for missing UI elements
+// Accessible UI primitives composed with Radix UI
 import * as React from "react"
+import * as SelectPrimitive from "@radix-ui/react-select"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
+import { Check, ChevronDown, ChevronRight, ChevronUp, X } from "lucide-react"
+
 import { cn } from "@/utils"
 
 // ScrollArea
@@ -155,12 +162,13 @@ export const Switch = React.forwardRef<
 Switch.displayName = "Switch"
 
 // Select components
-export const Select = ({ children, ...props }: any) => <div {...props}>{children}</div>
+export const Select = SelectPrimitive.Root
+
 export const SelectTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
 >(({ className, children, ...props }, ref) => (
-  <button
+  <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
       "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
@@ -169,49 +177,157 @@ export const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-  </button>
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown className="h-4 w-4 opacity-50" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
 ))
-SelectTrigger.displayName = "SelectTrigger"
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
-export const SelectContent = ({ children, ...props }: any) => (
-  <div className="relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md" {...props}>
-    {children}
-  </div>
-)
-export const SelectItem = ({ children, ...props }: any) => (
-  <div className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground" {...props}>
-    {children}
-  </div>
-)
-export const SelectValue = ({ placeholder = "Select...", ...props }: any) => <span {...props}>{placeholder}</span>
+export const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md",
+        className
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectPrimitive.ScrollUpButton className="flex cursor-default items-center justify-center py-1">
+        <ChevronUp className="h-4 w-4" />
+      </SelectPrimitive.ScrollUpButton>
+      <SelectPrimitive.Viewport className="p-1">
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectPrimitive.ScrollDownButton className="flex cursor-default items-center justify-center py-1">
+        <ChevronDown className="h-4 w-4" />
+      </SelectPrimitive.ScrollDownButton>
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+))
+SelectContent.displayName = SelectPrimitive.Content.displayName
+
+export const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",
+      "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+))
+SelectItem.displayName = SelectPrimitive.Item.displayName
+
+export const SelectValue = SelectPrimitive.Value
+SelectValue.displayName = SelectPrimitive.Value.displayName
 
 // Tooltip components
-export const TooltipProvider = ({ children }: any) => <>{children}</>
-export const Tooltip = ({ children }: any) => <>{children}</>
-export const TooltipTrigger = ({ children }: any) => <>{children}</>
-export const TooltipContent = ({ children }: any) => (
-  <div className="z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md">
-    {children}
-  </div>
-)
+export const TooltipProvider = TooltipPrimitive.Provider
+
+export const Tooltip = TooltipPrimitive.Root
+
+export const TooltipTrigger = TooltipPrimitive.Trigger
+
+export const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md",
+      className
+    )}
+    {...props}
+  />
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
 // Dialog components
-export const Dialog = ({ children }: any) => <>{children}</>
-export const DialogTrigger = ({ children }: any) => <>{children}</>
-export const DialogContent = ({ children }: any) => (
-  <div className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg">
-    {children}
-  </div>
+export const Dialog = DialogPrimitive.Root
+
+export const DialogTrigger = DialogPrimitive.Trigger
+
+export const DialogPortal = DialogPrimitive.Portal
+
+export const DialogClose = DialogPrimitive.Close
+
+export const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <DialogClose
+        type="button"
+        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+      >
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DialogClose>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
+DialogContent.displayName = DialogPrimitive.Content.displayName
+
+export const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />
 )
-export const DialogHeader = ({ children }: any) => <div className="flex flex-col space-y-1.5 text-center sm:text-left">{children}</div>
-export const DialogTitle = ({ children }: any) => <h2 className="text-lg font-semibold leading-none tracking-tight">{children}</h2>
-export const DialogDescription = ({ children }: any) => <p className="text-sm text-muted-foreground">{children}</p>
-export const DialogFooter = ({ children }: any) => (
-  <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-    {children}
-  </div>
+
+export const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)} {...props} />
 )
-export const DialogClose = ({ children, ...props }: any) => <button {...props}>{children}</button>
+
+export const DialogTitle = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+DialogTitle.displayName = DialogPrimitive.Title.displayName
+
+export const DialogDescription = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+DialogDescription.displayName = DialogPrimitive.Description.displayName
 
 // Alert components
 export const Alert = ({ children, className, ...props }: any) => (
@@ -240,47 +356,184 @@ export const CommandGroup = ({ children }: any) => <div className="overflow-hidd
 export const CommandItem = ({ children }: any) => <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none">{children}</div>
 
 // DropdownMenu components
-export const DropdownMenu = ({ children }: any) => <div className="relative inline-block text-left">{children}</div>
-export const DropdownMenuTrigger = ({ children, ...props }: any) => <button {...props}>{children}</button>
-export const DropdownMenuContent = ({ children, ...props }: any) => (
-  <div className="z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md" {...props}>
+export const DropdownMenu = DropdownMenuPrimitive.Root
+
+export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
+
+export const DropdownMenuGroup = DropdownMenuPrimitive.Group
+
+export const DropdownMenuPortal = DropdownMenuPrimitive.Portal
+
+export const DropdownMenuSub = DropdownMenuPrimitive.Sub
+
+export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
+
+export const DropdownMenuContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        className
+      )}
+      {...props}
+    />
+  </DropdownMenuPrimitive.Portal>
+))
+DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
+
+export const DropdownMenuItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
+    inset?: boolean
+  }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+      "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      inset && "pl-8",
+      className
+    )}
+    {...props}
+  />
+))
+DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
+
+export const DropdownMenuCheckboxItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
+>(({ className, children, checked, ...props }, ref) => (
+  <DropdownMenuPrimitive.CheckboxItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors",
+      "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    checked={checked}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </DropdownMenuPrimitive.ItemIndicator>
+    </span>
     {children}
-  </div>
-)
-export const DropdownMenuItem = ({ children, ...props }: any) => (
-  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50" {...props}>
+  </DropdownMenuPrimitive.CheckboxItem>
+))
+DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName
+
+export const DropdownMenuRadioItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
+>(({ className, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.RadioItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors",
+      "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuPrimitive.ItemIndicator>
+        <div className="h-1.5 w-1.5 rounded-full bg-current" />
+      </DropdownMenuPrimitive.ItemIndicator>
+    </span>
     {children}
-  </div>
-)
-export const DropdownMenuLabel = ({ children, ...props }: any) => (
-  <div className="px-2 py-1.5 text-sm font-semibold" {...props}>{children}</div>
-)
-export const DropdownMenuSeparator = ({ ...props }: any) => (
-  <div className="-mx-1 my-1 h-px bg-muted" {...props} />
-)
-export const DropdownMenuGroup = ({ children, ...props }: any) => <div {...props}>{children}</div>
-export const DropdownMenuPortal = ({ children, ...props }: any) => <>{children}</>
-export const DropdownMenuSub = ({ children, ...props }: any) => <>{children}</>
-export const DropdownMenuSubContent = ({ children, ...props }: any) => (
-  <div className="z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md" {...props}>
+  </DropdownMenuPrimitive.RadioItem>
+))
+DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName
+
+export const DropdownMenuLabel = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> & {
+    inset?: boolean
+  }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
+    {...props}
+  />
+))
+DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName
+
+export const DropdownMenuSeparator = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    {...props}
+  />
+))
+DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
+
+export const DropdownMenuSubTrigger = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
+    inset?: boolean
+  }
+>(({ className, inset, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.SubTrigger
+    ref={ref}
+    className={cn(
+      "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+      "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+      inset && "pl-8",
+      className
+    )}
+    {...props}
+  >
     {children}
-  </div>
+    <ChevronRight className="ml-auto h-4 w-4" />
+  </DropdownMenuPrimitive.SubTrigger>
+))
+DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName
+
+export const DropdownMenuSubContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.SubContent
+    ref={ref}
+    className={cn(
+      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+      className
+    )}
+    {...props}
+  />
+))
+DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName
+
+export const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
+  <span className={cn("ml-auto text-xs tracking-widest opacity-60", className)} {...props} />
 )
-export const DropdownMenuSubTrigger = ({ children, ...props }: any) => <button {...props}>{children}</button>
-export const DropdownMenuRadioGroup = ({ children, ...props }: any) => <div {...props}>{children}</div>
-export const DropdownMenuRadioItem = ({ children, ...props }: any) => (
-  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground" {...props}>
-    {children}
-  </div>
-)
-export const DropdownMenuCheckboxItem = ({ children, ...props }: any) => (
-  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground" {...props}>
-    {children}
-  </div>
-)
-export const DropdownMenuShortcut = ({ children, ...props }: any) => <span className="ml-auto text-xs tracking-widest opacity-60" {...props}>{children}</span>
 
 // Collapsible components
-export const Collapsible = ({ children }: any) => <>{children}</>
-export const CollapsibleTrigger = ({ children }: any) => <>{children}</>
-export const CollapsibleContent = ({ children }: any) => <>{children}</>
+export const Collapsible = CollapsiblePrimitive.Root
+
+export const CollapsibleTrigger = CollapsiblePrimitive.Trigger
+
+export const CollapsibleContent = React.forwardRef<
+  React.ElementRef<typeof CollapsiblePrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <CollapsiblePrimitive.Content
+    ref={ref}
+    className={cn("overflow-hidden text-sm", className)}
+    {...props}
+  >
+    {children}
+  </CollapsiblePrimitive.Content>
+))
+CollapsibleContent.displayName = CollapsiblePrimitive.Content.displayName
