@@ -42,7 +42,7 @@ export function ProtectedRoute({
     }
 
     // Check role requirements
-    if (requiredRole && user?.role?.name !== requiredRole) {
+    if (requiredRole && user?.role !== requiredRole) {
       router.push("/unauthorized");
       return;
     }
