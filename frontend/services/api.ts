@@ -279,124 +279,70 @@ export interface AgentMessage {
   };
 }
 
+// Import secure WebSocket manager
+import { SecureWebSocketManager, createSecureWebSocket } from '@/lib/websocket';
+
 class WebSocketManager {
-  private ws: WebSocket | null = null;
+  private wsManager: SecureWebSocketManager | null = null;
   private clientId: string | null = null;
-  private messageHandlers: ((message: AgentMessage) => void)[] = [];
-  private reconnectTimeout: NodeJS.Timeout | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
 
   // Connect to WebSocket
   connect(clientId: string) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    if (this.wsManager?.isConnected()) {
       return;
     }
 
     this.clientId = clientId;
-    // Use secure WebSocket URL (wss:// in production)
+    
+    // Create secure WebSocket connection
+    // Automatically uses WSS in production
     const wsUrl = `${WS_BASE_URL}/ws/${clientId}`;
-    const secureWsUrl = process.env.NODE_ENV === 'production' 
-      ? wsUrl.replace(/^ws:/, 'wss:')
-      : wsUrl;
+    
+    this.wsManager = createSecureWebSocket({
+      url: wsUrl,
+      reconnect: true,
+      maxReconnectAttempts: 5,
+      heartbeatInterval: 30000,
+      debug: process.env.NODE_ENV === 'development',
+    });
 
-    try {
-      this.ws = new WebSocket(secureWsUrl);
-
-      this.ws.onopen = () => {
-        console.log('WebSocket connected');
-        this.reconnectAttempts = 0;
-        
-        // Send authentication after connection (not in URL)
-        // Token will be validated by backend via cookie
-        this.ws?.send(JSON.stringify({
-          type: 'auth',
-          timestamp: new Date().toISOString(),
-        }));
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          this.handleMessage(message);
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        this.attemptReconnect();
-      };
-    } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
-      this.attemptReconnect();
-    }
-  }
-
-  // Attempt to reconnect
-  private attemptReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-
-    this.reconnectTimeout = setTimeout(() => {
-      console.log(`Attempting reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-      if (this.clientId) {
-        this.connect(this.clientId);
-      }
-    }, delay);
+    // Connect
+    this.wsManager.connect();
   }
 
   // Send message through WebSocket
   send(message: AgentMessage) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+    if (this.wsManager?.isConnected()) {
+      this.wsManager.send({
+        ...message,
+        timestamp: message.timestamp || new Date().toISOString(),
+      });
     } else {
       console.error('WebSocket not connected');
     }
   }
 
-  // Handle incoming messages
-  private handleMessage(message: AgentMessage) {
-    this.messageHandlers.forEach(handler => handler(message));
-  }
-
   // Subscribe to messages
   onMessage(handler: (message: AgentMessage) => void) {
-    this.messageHandlers.push(handler);
-    return () => {
-      this.messageHandlers = this.messageHandlers.filter(h => h !== handler);
-    };
+    if (!this.wsManager) {
+      console.error('WebSocket manager not initialized');
+      return () => {};
+    }
+    
+    return this.wsManager.on('*', handler);
   }
 
   // Disconnect WebSocket
   disconnect() {
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
+    if (this.wsManager) {
+      this.wsManager.disconnect();
+      this.wsManager = null;
     }
-    
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-    
-    this.messageHandlers = [];
-    this.reconnectAttempts = 0;
   }
 
   // Get connection status
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.wsManager?.isConnected() || false;
   }
 }
 
