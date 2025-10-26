@@ -4,9 +4,9 @@ Handles value model design and hypothesis generation
 Powered by Together.ai for intelligent value modeling
 """
 
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
 import os
 import json
@@ -18,6 +18,8 @@ import redis.asyncio as redis
 from enum import Enum
 from dotenv import load_dotenv
 from together_client import TogetherPipesClient
+
+from security import SecurityHeadersMiddleware, RateLimiter, InputValidator, PasswordValidator
 
 # Load environment variables
 load_dotenv()
@@ -34,12 +36,24 @@ ALLOWED_ORIGINS = os.getenv(
     "http://localhost:3000,http://127.0.0.1:3000"
 ).split(",")
 
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "X-Request-ID",
+        "X-Tenant-ID",
+        "Accept",
+        "Accept-Language"
+    ],
+    max_age=3600,
 )
 
 # Configuration

@@ -19,9 +19,16 @@ from .database import get_db
 from .models import Organization
 
 # Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY or SECRET_KEY == "your-secret-key-change-this-in-production":
+    raise RuntimeError(
+        "CRITICAL SECURITY ERROR: JWT_SECRET_KEY environment variable must be set to a secure, "
+        "non-default value. This is required for production security. "
+        "Generate a secure key with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+    )
+
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 15  # Reduced from 30 for better security
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # Password hashing
