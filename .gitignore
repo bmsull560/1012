@@ -37,6 +37,12 @@ dist/
 *.key
 .env.local
 .env.*.local
+.env.production
+.env.production.local
+secrets/
+*.secret
+*.password
+*.credentials
 
 # Backups
 backup_*.tar.gz
