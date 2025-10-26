@@ -21,6 +21,7 @@
     "paths": {
       "@/*": ["./*"],
       "@/components/*": ["./components/*"],
+      "@/design-system/*": ["./design-system/*"],
       "@/utils": ["./utils/cn"],
       "@/lib/utils": ["./utils/cn"],
       "@/stores/*": ["./stores/*"],
