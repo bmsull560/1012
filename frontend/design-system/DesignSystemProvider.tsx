@@ -22,9 +22,15 @@ export const DesignSystemProvider: React.FC<DesignSystemProviderProps> = ({
 }) => {
   const cssVariables = useMemo(() => tokensToCSSVariables(tokens), [tokens])
 
+  // Helper to convert cssVariables object to CSS string
+  const cssVariablesString = useMemo(() => {
+    return `:root { ${Object.entries(cssVariables).map(([key, value]) => `${key}: ${value};`).join(" ")} }`
+  }, [cssVariables])
+
   return (
     <DesignSystemContext.Provider value={{ tokens }}>
-      <div style={cssVariables}>{children}</div>
+      <style>{cssVariablesString}</style>
+      {children}
     </DesignSystemContext.Provider>
   )
 }
