@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Brain, 
+import {
+  Brain,
   Send, 
   Sparkles, 
   ChevronRight, 
@@ -29,6 +29,8 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
+import { reportError, trackEvent } from "@/lib/monitoring";
 
 // Agent Types
 type AgentType = "architect" | "committer" | "executor" | "amplifier";
@@ -104,9 +106,13 @@ export function DualBrainWorkspace() {
   const [canvasMode, setCanvasMode] = useState<"view" | "edit">("view");
   const [showHandoff, setShowHandoff] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const initialViewTracked = useRef(false);
+  const previousAgent = useRef<AgentType>(activeAgent);
 
   // Simulate agent thinking
   const simulateThoughtStream = async (agent: AgentType) => {
+    trackEvent("dual_brain.thought_stream_started", { agent });
+
     const thoughts = [
       { text: "Accessing industry benchmarks...", confidence: 0.7 },
       { text: "Mapping pain points to value drivers...", confidence: 0.85 },
@@ -128,62 +134,153 @@ export function DualBrainWorkspace() {
       setThoughtStream(prev => [...prev, item]);
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      setThoughtStream(prev => 
+      setThoughtStream(prev =>
         prev.map(t => t.id === item.id ? { ...t, status: "complete" } : t)
       );
     }
+
+    trackEvent("dual_brain.thought_stream_completed", {
+      agent,
+      stepCount: thoughts.length,
+    });
+  };
+
+  const handleCanvasModeChange = (mode: "view" | "edit") => {
+    setCanvasMode(mode);
+    trackEvent("dual_brain.canvas_mode_changed", { mode });
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isProcessing) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput || isProcessing) return;
+
+    const startTimestamp = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: "user",
-      content: input,
+      role: 'user',
+      content: trimmedInput,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInput("");
+    setInput('');
     setIsProcessing(true);
     setThoughtStream([]);
 
-    // Simulate agent processing
-    await simulateThoughtStream(activeAgent);
-
-    // Simulate agent response
-    const agentResponse: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "assistant",
-      content: `Based on my analysis, I've identified 5 key value drivers that could deliver $2.3M in annual value. The primary opportunity is in customer retention optimization, which alone could yield a 25% improvement in MRR.`,
-      timestamp: new Date(),
+    trackEvent('dual_brain.message_submitted', {
       agent: activeAgent,
-      confidence: 0.85
-    };
+      charCount: trimmedInput.length,
+    });
 
-    setMessages(prev => [...prev, agentResponse]);
-    setIsProcessing(false);
+    try {
+      await simulateThoughtStream(activeAgent);
 
-    // Check if handoff is needed
-    if (Math.random() > 0.7) {
-      setTimeout(() => setShowHandoff(true), 1000);
+      const agentResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Based on my analysis, I've identified 5 key value drivers that could deliver $2.3M in annual value. The primary opportunity is in customer retention optimization, which alone could yield a 25% improvement in MRR.`,
+        timestamp: new Date(),
+        agent: activeAgent,
+        confidence: 0.85
+      };
+
+      setMessages(prev => [...prev, agentResponse]);
+
+      const endTimestamp = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const durationMs = Math.round(endTimestamp - startTimestamp);
+
+      trackEvent('dual_brain.message_completed', {
+        agent: activeAgent,
+        durationMs,
+      });
+
+      if (Math.random() > 0.7) {
+        const agentForHandoff = activeAgent;
+        setTimeout(() => {
+          setShowHandoff(true);
+          trackEvent('dual_brain.handoff_prompted', {
+            agent: agentForHandoff,
+          });
+        }, 1000);
+      }
+    } catch (error) {
+      reportError(error, {
+        component: 'DualBrainWorkspace.handleSend',
+        agent: activeAgent,
+      });
+
+      trackEvent('dual_brain.message_failed', {
+        agent: activeAgent,
+      });
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `${Date.now()}-error`,
+          role: 'system',
+          content: 'We ran into an issue processing your request. Please try again.',
+          timestamp: new Date()
+        }
+      ]);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleHandoff = (nextAgent: AgentType) => {
     setActiveAgent(nextAgent);
     setShowHandoff(false);
-    
+
     const handoffMessage: Message = {
       id: Date.now().toString(),
       role: "system",
       content: `Handoff complete. ${AGENTS[nextAgent].name} is now active.`,
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, handoffMessage]);
+
+    trackEvent("dual_brain.handoff_completed", {
+      nextAgent,
+      previousAgent: activeAgent,
+    });
   };
+
+  const handleWorkspaceReset = (resetFn: () => void) => {
+    trackEvent("dual_brain.workspace_recovered", {
+      agent: activeAgent,
+      messageCount: messages.length,
+    });
+    setIsProcessing(false);
+    setShowHandoff(false);
+    resetFn();
+  };
+
+  const dismissHandoff = (source: "backdrop" | "button") => {
+    trackEvent("dual_brain.handoff_dismissed", {
+      agent: activeAgent,
+      source,
+    });
+    setShowHandoff(false);
+  };
+
+  useEffect(() => {
+    if (!initialViewTracked.current) {
+      trackEvent("dual_brain.workspace_viewed", { agent: activeAgent });
+      initialViewTracked.current = true;
+    }
+  }, [activeAgent]);
+
+  useEffect(() => {
+    if (previousAgent.current !== activeAgent) {
+      trackEvent("dual_brain.agent_switched", {
+        from: previousAgent.current,
+        to: activeAgent,
+      });
+      previousAgent.current = activeAgent;
+    }
+  }, [activeAgent]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -195,302 +292,328 @@ export function DualBrainWorkspace() {
   const currentAgent = AGENTS[activeAgent];
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-white">
-      {/* Left Brain - Conversational AI */}
-      <div className="w-1/2 border-r bg-white flex flex-col">
-        {/* Agent Status Bar */}
-        <div className="border-b bg-gradient-to-r from-white to-slate-50 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center",
-                "bg-gradient-to-br from-slate-100 to-slate-200"
-              )}>
-                <currentAgent.icon className={cn("w-5 h-5", currentAgent.color)} />
+    <ErrorBoundary
+      resetKeys={[activeAgent, canvasMode, messages.length, thoughtStream.length]}
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-slate-50 p-6 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+          <h2 className="text-xl font-semibold text-slate-900">Workspace temporarily unavailable</h2>
+          <p className="max-w-md text-sm text-slate-600">
+            We couldn't load the Dual Brain workspace. Please try again.
+          </p>
+          <Button
+            type="button"
+            onClick={() => handleWorkspaceReset(resetErrorBoundary)}
+            className="bg-slate-900 text-white hover:bg-slate-700"
+          >
+            Reload workspace
+          </Button>
+          <details className="max-w-lg text-left text-xs text-slate-500">
+            <summary className="cursor-pointer text-slate-600">Error details</summary>
+            <pre className="mt-2 overflow-auto rounded bg-slate-100 p-3 text-xs text-slate-700">
+              {error.message}
+            </pre>
+          </details>
+        </div>
+      )}
+    >
+      <div className="flex h-screen bg-gradient-to-br from-slate-50 to-white">
+        {/* Left Brain - Conversational AI */}
+        <div className="w-1/2 border-r bg-white flex flex-col">
+          {/* Agent Status Bar */}
+          <div className="border-b bg-gradient-to-r from-white to-slate-50 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center",
+                  "bg-gradient-to-br from-slate-100 to-slate-200"
+                )}>
+                  <currentAgent.icon className={cn("w-5 h-5", currentAgent.color)} />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    {currentAgent.name}
+                    <Badge variant="outline" className="text-xs">
+                      {currentAgent.stage}
+                    </Badge>
+                  </h2>
+                  <p className="text-xs text-slate-500">{currentAgent.description}</p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-                  {currentAgent.name}
-                  <Badge variant="outline" className="text-xs">
-                    {currentAgent.stage}
-                  </Badge>
-                </h2>
-                <p className="text-xs text-slate-500">{currentAgent.description}</p>
+            
+              {/* Agent Lifecycle Progress */}
+              <div className="flex items-center gap-1">
+                {Object.values(AGENTS).map((agent, index) => (
+                  <React.Fragment key={agent.id}>
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                        agent.id === activeAgent
+                          ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white scale-110"
+                          : "bg-slate-100 text-slate-400"
+                      )}
+                    >
+                      <agent.icon className="w-4 h-4" />
+                    </div>
+                    {index < Object.values(AGENTS).length - 1 && (
+                      <ChevronRight className="w-4 h-4 text-slate-300" />
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
-            
-            {/* Agent Lifecycle Progress */}
-            <div className="flex items-center gap-1">
-              {Object.values(AGENTS).map((agent, index) => (
-                <React.Fragment key={agent.id}>
-                  <div
+          </div>
+
+          {/* Thought Stream */}
+          <AnimatePresence>
+            {thoughtStream.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="border-b bg-gradient-to-r from-purple-50 to-blue-50 overflow-hidden"
+              >
+                <div className="px-6 py-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="w-4 h-4 text-purple-600 animate-pulse" />
+                    <span className="text-xs font-medium text-purple-900">
+                      Agent Reasoning Process
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {thoughtStream.slice(-3).map((thought) => (
+                      <motion.div
+                        key={thought.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        {thought.status === "processing" ? (
+                          <Loader2 className="w-3 h-3 animate-spin text-purple-500" />
+                        ) : (
+                          <CheckCircle className="w-3 h-3 text-green-500" />
+                        )}
+                        <span className="text-slate-700">{thought.thought}</span>
+                        {thought.confidence && (
+                          <Badge variant="secondary" className="text-xs px-1 py-0">
+                            {(thought.confidence * 100).toFixed(0)}%
+                          </Badge>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Agent Thread (Messages) */}
+          <ScrollArea className="flex-1 px-6 py-4">
+            <div className="space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center py-12">
+                  <currentAgent.icon className={cn("w-12 h-12 mx-auto mb-4", currentAgent.color)} />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    {currentAgent.name} Ready
+                  </h3>
+                  <p className="text-sm text-slate-500 max-w-md mx-auto">
+                    I'll help you {currentAgent.stage.toLowerCase()}. Start by telling me about your customer or opportunity.
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                      agent.id === activeAgent
-                        ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white scale-110"
-                        : "bg-slate-100 text-slate-400"
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start"
                     )}
                   >
-                    <agent.icon className="w-4 h-4" />
-                  </div>
-                  {index < Object.values(AGENTS).length - 1 && (
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Thought Stream */}
-        <AnimatePresence>
-          {thoughtStream.length > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-b bg-gradient-to-r from-purple-50 to-blue-50 overflow-hidden"
-            >
-              <div className="px-6 py-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Brain className="w-4 h-4 text-purple-600 animate-pulse" />
-                  <span className="text-xs font-medium text-purple-900">
-                    Agent Reasoning Process
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {thoughtStream.slice(-3).map((thought) => (
-                    <motion.div
-                      key={thought.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-2 text-xs"
-                    >
-                      {thought.status === "processing" ? (
-                        <Loader2 className="w-3 h-3 animate-spin text-purple-500" />
-                      ) : (
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                      )}
-                      <span className="text-slate-700">{thought.thought}</span>
-                      {thought.confidence && (
-                        <Badge variant="secondary" className="text-xs px-1 py-0">
-                          {(thought.confidence * 100).toFixed(0)}%
-                        </Badge>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Agent Thread (Messages) */}
-        <ScrollArea className="flex-1 px-6 py-4">
-          <div className="space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center py-12">
-                <currentAgent.icon className={cn("w-12 h-12 mx-auto mb-4", currentAgent.color)} />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">
-                  {currentAgent.name} Ready
-                </h3>
-                <p className="text-sm text-slate-500 max-w-md mx-auto">
-                  I'll help you {currentAgent.stage.toLowerCase()}. Start by telling me about your customer or opportunity.
-                </p>
-              </div>
-            ) : (
-              messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  )}
-                >
-                  {message.role === "system" ? (
-                    <div className="w-full">
-                      <div className="flex items-center justify-center gap-2 py-2">
-                        <Separator className="flex-1" />
-                        <span className="text-xs text-slate-500 px-2">
-                          {message.content}
-                        </span>
-                        <Separator className="flex-1" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={cn(
-                      "max-w-[80%] rounded-lg px-4 py-3",
-                      message.role === "user"
-                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
-                        : "bg-slate-100 text-slate-900"
-                    )}>
-                      {message.agent && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            {AGENTS[message.agent].name}
-                          </Badge>
-                          {message.confidence && (
-                            <span className="text-xs opacity-70">
-                              {(message.confidence * 100).toFixed(0)}% confident
-                            </span>
-                          )}
+                    {message.role === "system" ? (
+                      <div className="w-full">
+                        <div className="flex items-center justify-center gap-2 py-2">
+                          <Separator className="flex-1" />
+                          <span className="text-xs text-slate-500 px-2">
+                            {message.content}
+                          </span>
+                          <Separator className="flex-1" />
                         </div>
-                      )}
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <span className="text-xs opacity-70 mt-2 block">
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  )}
-                </motion.div>
-              ))
-            )}
-            <div ref={scrollRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Agent Prompt Area */}
-        <div className="border-t px-6 py-4 bg-gradient-to-t from-slate-50 to-white">
-          <div className="flex gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={`Ask ${currentAgent.name} anything...`}
-              className="min-h-[60px] resize-none"
-              disabled={isProcessing}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isProcessing}
-              size="icon"
-              className="h-[60px] w-[60px] bg-gradient-to-br from-blue-600 to-purple-600"
-            >
-              {isProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <div className={cn(
+                        "max-w-[80%] rounded-lg px-4 py-3",
+                        message.role === "user"
+                          ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
+                          : "bg-slate-100 text-slate-900"
+                      )}>
+                        {message.agent && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="text-xs">
+                              {AGENTS[message.agent].name}
+                            </Badge>
+                            {message.confidence && (
+                              <span className="text-xs opacity-70">
+                                {(message.confidence * 100).toFixed(0)}% confident
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        <span className="text-xs opacity-70 mt-2 block">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    )}
+                  </motion.div>
+                ))
               )}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Brain - Interactive Canvas */}
-      <div className="w-1/2 flex flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50">
-        {/* Canvas Header */}
-        <div className="border-b bg-white/80 backdrop-blur px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-slate-900">Living Value Graph</h2>
-              <p className="text-sm text-slate-500">
-                Interactive visualization of value creation
-              </p>
+              <div ref={scrollRef} />
             </div>
-            <div className="flex items-center gap-2">
-              <Tabs value={canvasMode} onValueChange={(v) => setCanvasMode(v as "view" | "edit")}>
-                <TabsList>
-                  <TabsTrigger value="view">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View
-                  </TabsTrigger>
-                  <TabsTrigger value="edit">
-                    <Edit3 className="w-4 h-4 mr-2" />
-                    Edit
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
-        </div>
+          </ScrollArea>
 
-        {/* Canvas Content - Placeholder for Value Graph */}
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="min-h-full flex items-center justify-center">
-            <Card className="w-full max-w-2xl">
-              <CardHeader>
-                <CardTitle>Value Graph Visualization</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-600 mb-4">
-                  The Living Value Graph will render here, showing nodes for value drivers,
-                  outcomes, and KPIs with interactive connections.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-2xl font-bold text-green-600">$2.3M</div>
-                      <p className="text-sm text-slate-600">Annual Value Potential</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-2xl font-bold text-blue-600">85%</div>
-                      <p className="text-sm text-slate-600">Confidence Score</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Agent Handoff Modal */}
-      <AnimatePresence>
-        {showHandoff && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => setShowHandoff(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg p-6 max-w-md"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold mb-4">Agent Handoff Ready</h3>
-              <p className="text-slate-600 mb-6">
-                The {currentAgent.name} has completed the {currentAgent.stage.toLowerCase()}.
-                Ready to proceed to the next stage?
-              </p>
-              <div className="space-y-2">
-                {Object.values(AGENTS)
-                  .filter(agent => agent.id !== activeAgent)
-                  .map(agent => (
-                    <Button
-                      key={agent.id}
-                      onClick={() => handleHandoff(agent.id)}
-                      variant="outline"
-                      className="w-full justify-start"
-                    >
-                      <agent.icon className={cn("w-4 h-4 mr-2", agent.color)} />
-                      Activate {agent.name}
-                    </Button>
-                  ))}
-              </div>
+          {/* Agent Prompt Area */}
+          <div className="border-t px-6 py-4 bg-gradient-to-t from-slate-50 to-white">
+            <div className="flex gap-2">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder={`Ask ${currentAgent.name} anything...`}
+                className="min-h-[60px] resize-none"
+                disabled={isProcessing}
+              />
               <Button
-                onClick={() => setShowHandoff(false)}
+                onClick={handleSend}
+                disabled={!input.trim() || isProcessing}
+                size="icon"
+                className="h-[60px] w-[60px] bg-gradient-to-br from-blue-600 to-purple-600"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Brain - Interactive Canvas */}
+        <div className="w-1/2 flex flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50">
+          {/* Canvas Header */}
+          <div className="border-b bg-white/80 backdrop-blur px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-slate-900">Living Value Graph</h2>
+                <p className="text-sm text-slate-500">
+                  Interactive visualization of value creation
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+              <Tabs value={canvasMode} onValueChange={value => handleCanvasModeChange(value as "view" | "edit")}>
+                  <TabsList>
+                    <TabsTrigger value="view">
+                      <Eye className="w-4 h-4 mr-2" />
+                      View
+                    </TabsTrigger>
+                    <TabsTrigger value="edit">
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Edit
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+          </div>
+
+          {/* Canvas Content - Placeholder for Value Graph */}
+          <div className="flex-1 p-6 overflow-auto">
+            <div className="min-h-full flex items-center justify-center">
+              <Card className="w-full max-w-2xl">
+                <CardHeader>
+                  <CardTitle>Value Graph Visualization</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-slate-600 mb-4">
+                    The Living Value Graph will render here, showing nodes for value drivers,
+                    outcomes, and KPIs with interactive connections.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-2xl font-bold text-green-600">$2.3M</div>
+                        <p className="text-sm text-slate-600">Annual Value Potential</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-2xl font-bold text-blue-600">85%</div>
+                        <p className="text-sm text-slate-600">Confidence Score</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Agent Handoff Modal */}
+        <AnimatePresence>
+          {showHandoff && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => dismissHandoff("backdrop")}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-lg p-6 max-w-md"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-lg font-semibold mb-4">Agent Handoff Ready</h3>
+                <p className="text-slate-600 mb-6">
+                  The {currentAgent.name} has completed the {currentAgent.stage.toLowerCase()}.
+                  Ready to proceed to the next stage?
+                </p>
+                <div className="space-y-2">
+                  {Object.values(AGENTS)
+                    .filter(agent => agent.id !== activeAgent)
+                    .map(agent => (
+                      <Button
+                        key={agent.id}
+                        onClick={() => handleHandoff(agent.id)}
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
+                        <agent.icon className={cn("w-4 h-4 mr-2", agent.color)} />
+                        Activate {agent.name}
+                      </Button>
+                    ))}
+                </div>
+              <Button
+                onClick={() => dismissHandoff("button")}
                 variant="ghost"
                 className="w-full mt-4"
               >
-                Continue with current agent
-              </Button>
+                  Continue with current agent
+                </Button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
     </div>
+    </ErrorBoundary>
   );
 }
