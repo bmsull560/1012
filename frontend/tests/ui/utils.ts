@@ -68,29 +68,15 @@ export async function stubWorkspaceNetwork(page: Page) {
     });
   });
 
-  await page.route('http://localhost:8012/**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(mockAgentResponse),
-    }),
-  );
-
-  await page.route('http://localhost:8013/**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(mockAgentResponse),
-    }),
-  );
-
-  await page.route('http://localhost:8014/**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(mockAgentResponse),
-    }),
-  );
+  for (const port of [8012, 8013, 8014]) {
+    await page.route(`http://localhost:${port}/**`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockAgentResponse),
+      }),
+    );
+  }
 }
 
 export async function disableAnimations(page: Page) {
