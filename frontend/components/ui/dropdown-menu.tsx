@@ -117,7 +117,11 @@ const DropdownMenuRadioItem = React.forwardRef<React.ElementRef<typeof DropdownM
 )
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName
 
-const DropdownMenuLabel = React.forwardRef<React.ElementRef<typeof DropdownMenuPrimitive.Label>, React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label>>(
+interface DropdownMenuLabelProps extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> {
+  inset?: boolean;
+}
+
+const DropdownMenuLabel = React.forwardRef<React.ElementRef<typeof DropdownMenuPrimitive.Label>, DropdownMenuLabelProps>(
   ({ className, inset, ...props }, ref) => (
     <DropdownMenuPrimitive.Label
       ref={ref}
