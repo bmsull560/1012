@@ -50,21 +50,33 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: [
-          // Content Security Policy - Prevents XSS attacks
+          // Content Security Policy - Prevents XSS attacks (Production-ready)
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // TODO: Remove unsafe-* after refactoring inline scripts
-              "style-src 'self' 'unsafe-inline'", // Tailwind requires unsafe-inline
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' data:",
-              "connect-src 'self' ws: wss: https:",
-              "frame-ancestors 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "upgrade-insecure-requests",
-            ].join('; '),
+            value: process.env.NODE_ENV === 'production' 
+              ? [
+                  "default-src 'self'",
+                  "script-src 'self'", // Removed unsafe-eval and unsafe-inline for production
+                  "style-src 'self' 'unsafe-inline'", // Tailwind CSS requires unsafe-inline
+                  "img-src 'self' data: https: blob:",
+                  "font-src 'self' data:",
+                  "connect-src 'self' wss: https:",
+                  "frame-ancestors 'none'",
+                  "base-uri 'self'",
+                  "form-action 'self'",
+                  "upgrade-insecure-requests",
+                ].join('; ')
+              : [
+                  "default-src 'self'",
+                  "script-src 'self' 'unsafe-eval'", // Allow eval in development for hot reload
+                  "style-src 'self' 'unsafe-inline'",
+                  "img-src 'self' data: https: blob:",
+                  "font-src 'self' data:",
+                  "connect-src 'self' ws: wss: https:",
+                  "frame-ancestors 'none'",
+                  "base-uri 'self'",
+                  "form-action 'self'",
+                ].join('; '),
           },
           // Prevent clickjacking
           {
