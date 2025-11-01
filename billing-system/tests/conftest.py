@@ -22,6 +22,7 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://test:test@localhost:5432/test_billing"
 os.environ["REDIS_URL"] = "redis://localhost:6379/1"
 os.environ["JWT_SECRET_KEY"] = "test-secret-key"
+os.environ["ENABLE_OIDC_AUTH"] = "false"
 
 from backend.database import Base
 from backend.billing_service import app
@@ -105,6 +106,7 @@ async def auth_token(test_organization: Organization) -> str:
     token_data = {
         "organization_id": str(test_organization.id),
         "user_id": str(uuid4()),
+        "email": "test.user@example.com",
         "scopes": ["read", "write"]
     }
     return create_access_token(token_data)

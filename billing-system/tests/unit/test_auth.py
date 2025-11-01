@@ -75,6 +75,7 @@ class TestTokenGeneration:
         data = {
             "organization_id": str(uuid4()),
             "user_id": str(uuid4()),
+            "email": "user@example.com",
             "scopes": ["read", "write"]
         }
         
@@ -116,6 +117,7 @@ class TestTokenGeneration:
         token = create_access_token({
             "organization_id": org_id,
             "user_id": user_id,
+            "email": "admin@example.com",
             "scopes": ["admin"]
         })
         
@@ -140,7 +142,11 @@ class TestTokenGeneration:
     async def test_expired_token(self):
         """Test expired token verification fails"""
         token = create_access_token(
-            {"organization_id": str(uuid4())},
+            {
+                "organization_id": str(uuid4()),
+                "user_id": str(uuid4()),
+                "email": "expired@example.com",
+            },
             timedelta(seconds=-1)  # Already expired
         )
         
